@@ -1,0 +1,9 @@
+[package]
+name = "mclog"
+version = "0.0.0"
+edition = "2021"
+
+license = "MIT"
+description = "async parser and analyzer for Minecraft logs"
+
+[dependencies]
