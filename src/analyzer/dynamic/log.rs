@@ -1,0 +1,86 @@
+use lazy_static::lazy_static;
+use regex::Regex;
+use rhai::{Dynamic, ImmutableString};
+use std::collections::HashMap;
+
+use crate::analyzer::DynamicAnalyzerDetails;
+
+#[derive(Clone)]
+pub struct Log {
+    dad: DynamicAnalyzerDetails,
+}
+
+impl Log {
+    pub fn new(dad: DynamicAnalyzerDetails) -> Self {
+        Self { dad }
+    }
+
+    pub fn has_line(self, to_find: ImmutableString) -> bool {
+        self.dad.lines.iter().any(|line| line.contains(&**to_find))
+    }
+
+    pub fn has_line2(self, to_find: ImmutableString, identifier: String) -> Dynamic {
+        let regex = REPLACE_NUMS_REGEX.replace_all(&to_find, "(.*)");
+        let regex = Regex::new(regex.as_ref()).unwrap();
+
+        let mut capturess: Captures = Captures {
+            captures: HashMap::new(),
+            identifier,
+        };
+
+        let mut capturesss: Vec<Captures> = Vec::new();
+
+        let mut capture_index = 0;
+
+        for line in self.dad.lines {
+            let is_match = regex.is_match(&line);
+
+            if is_match {
+                let captures = regex.captures(&line).unwrap();
+
+                for idx in 0..captures.len() {
+                    if idx == 0 {
+                        continue;
+                    }
+
+                    let capture = captures.get(idx).unwrap();
+                    let capture = capture.as_str().to_string();
+
+                    capturess.captures.insert(capture_index, capture);
+
+                    capture_index += 1;
+
+                    if capture_index as usize + 1 == captures.len() {
+                        capturesss.push(capturess.clone());
+                        capture_index = 0;
+                    }
+                }
+            }
+        }
+
+        if capturess.captures.is_empty() {
+            Dynamic::UNIT
+        } else {
+            Dynamic::from(capturesss)
+        }
+    }
+
+    pub fn has_line_permissive(self, to_find: ImmutableString) -> bool {
+        self.dad
+            .lines
+            .iter()
+            .any(|line| line.to_lowercase().contains(&to_find.to_lowercase()))
+    }
+}
+
+lazy_static! {
+    static ref REPLACE_NUMS_REGEX: Regex = Regex::new(r"\{\d}").unwrap_or_else(|err| {
+        panic!("Failed to create 'REPLACE_NUMS_REGEX: {}'", err);
+    });
+}
+
+#[derive(Clone, Debug)]
+pub struct Captures {
+    pub identifier: String,
+    pub captures: HashMap<i32, String>,
+}
