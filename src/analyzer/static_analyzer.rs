@@ -82,8 +82,15 @@ impl StaticAnalyzer {
     }
 
     pub fn leaked_plugin(line: &str) -> Option<String> {
-        if line.contains("Download from https://directleaks.to") {
-            return Some("".to_string());
+        let sus = [
+            "directleaks",
+            "blackspigot",
+            "nulled",
+            "plugin integrity has been compromised",
+        ]; // ඞඞඞ
+
+        if sus.iter().any(|s| line.to_lowercase().contains(s)) {
+            return Some(line.to_string());
         }
 
         None
