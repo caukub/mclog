@@ -51,20 +51,16 @@ impl Log {
                 if let Some(plugin) = StaticAnalyzer::plugin_bukkit(&line) {
                     matched_plugin_versions.push(plugin.version);
                     lines.push(line);
-                } else {
-                    if !matched_plugin_versions
-                        .iter()
-                        .any(|version| line.contains(version))
-                    {
-                        let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
+                } else if !matched_plugin_versions
+                    .iter()
+                    .any(|version| line.contains(version))
+                {
+                    let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
 
-                        lines.push(cleared_line)
-                    } else {
-                        lines.push(line);
-                    }
+                    lines.push(cleared_line)
+                } else {
+                    lines.push(line);
                 }
-            } else {
-                continue;
             }
         }
 
@@ -99,20 +95,16 @@ impl Log {
                 if let Some(plugin) = StaticAnalyzer::plugin_bukkit(&line) {
                     matched_plugin_versions.push(plugin.version);
                     lines.push(line);
-                } else {
-                    if !matched_plugin_versions
-                        .iter()
-                        .any(|version| line.contains(version))
-                    {
-                        let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
+                } else if !matched_plugin_versions
+                    .iter()
+                    .any(|version| line.contains(version))
+                {
+                    let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
 
-                        lines.push(cleared_line)
-                    } else {
-                        lines.push(line);
-                    }
+                    lines.push(cleared_line)
+                } else {
+                    lines.push(line);
                 }
-            } else {
-                continue;
             }
         }
 
