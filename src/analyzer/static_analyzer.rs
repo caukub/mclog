@@ -51,7 +51,11 @@ impl StaticAnalyzer {
         None
     }
 
-    pub fn port(name: String, line: &str, must_contain: String) -> Option<(String, u16)> {
+    pub fn port(name: String, mut line: &str, must_contain: String) -> Option<(String, u16)> {
+        if let Some(split) = line.split_once("]") {
+            line = split.1;
+        };
+
         if line.to_lowercase().contains(&must_contain.to_lowercase()) && PORT_REGEX.is_match(line) {
             let captures = PORT_REGEX.captures(line).unwrap();
             let port = captures.get(1).unwrap().as_str().parse::<u16>().unwrap();
