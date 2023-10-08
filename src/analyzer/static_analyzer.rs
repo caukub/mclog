@@ -1,6 +1,7 @@
 use super::Plugin;
 use lazy_static::lazy_static;
 use regex::Regex;
+use thiserror::Error;
 
 lazy_static! {
     static ref SPIGOT_PLUGIN_REGEX: Regex = Regex::new(r"\[([^\]]*)\] Loading (.*) v(.*)")
@@ -29,18 +30,18 @@ impl StaticAnalyzer {
 
         if is_paper_plugin_regex_match || is_spigot_plugin_regex_match {
             let captures = match is_paper_plugin_regex_match {
-                true => PAPER_PLUGIN_REGEX.captures(line).unwrap(),
-                false => SPIGOT_PLUGIN_REGEX.captures(line).unwrap(),
+                true => PAPER_PLUGIN_REGEX.captures(line)?,
+                false => SPIGOT_PLUGIN_REGEX.captures(line)?,
             };
 
-            let plugin_prefix = captures.get(1).unwrap().as_str();
-            let plugin_name = captures.get(2).unwrap().as_str();
+            let plugin_prefix = captures.get(1)?.as_str();
+            let plugin_name = captures.get(2)?.as_str();
 
             let plugin_prefix_cleared = PluginNameNormalizer(plugin_prefix).clear();
             let plugin_name_cleared = PluginNameNormalizer(plugin_name).clear();
 
             if plugin_prefix_cleared == plugin_name_cleared {
-                let plugin_version = captures.get(3).unwrap().as_str();
+                let plugin_version = captures.get(3)?.as_str();
 
                 return Some(Plugin {
                     name: plugin_name.to_string(),
@@ -57,8 +58,11 @@ impl StaticAnalyzer {
         };
 
         if line.to_lowercase().contains(&must_contain.to_lowercase()) && PORT_REGEX.is_match(line) {
-            let captures = PORT_REGEX.captures(line).unwrap();
-            let port = captures.get(1).unwrap().as_str().parse::<u16>().unwrap();
+            let captures = PORT_REGEX.captures(line)?;
+
+            let capture = captures.get(1)?;
+
+            let port = capture.as_str().parse::<u16>().ok()?;
 
             return Some((name, port));
         }
@@ -67,8 +71,8 @@ impl StaticAnalyzer {
 
     pub fn vanilla_port(line: &str, must_contain: &str) -> Option<u16> {
         if line.contains(must_contain) && PORT_REGEX.is_match(line) {
-            let captures = PORT_REGEX.captures(line).unwrap();
-            let port = captures.get(1).unwrap().as_str().parse::<u16>().unwrap();
+            let port = PORT_REGEX.captures(line)?.get(1)?.as_str();
+            let port = port.parse::<u16>().ok()?;
 
             return Some(port);
         }
@@ -78,7 +82,7 @@ impl StaticAnalyzer {
 
     pub fn noproxy_server_version(line: &str) -> Option<String> {
         if MINECRAFT_VERSION_REGEX.is_match(line) {
-            let captures = MINECRAFT_VERSION_REGEX.captures(line).unwrap();
+            let captures = MINECRAFT_VERSION_REGEX.captures(line)?;
             let version = captures.get(1).unwrap().as_str().to_string();
             return Some(version);
         }
