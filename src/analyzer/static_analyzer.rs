@@ -1,7 +1,6 @@
 use super::Plugin;
 use lazy_static::lazy_static;
 use regex::Regex;
-use thiserror::Error;
 
 lazy_static! {
     static ref SPIGOT_PLUGIN_REGEX: Regex = Regex::new(r"\[([^\]]*)\] Loading (.*) v(.*)")
@@ -12,7 +11,7 @@ lazy_static! {
         Regex::new(r"\[([^\]]*)\] Loading server plugin (.*) v(.*)").unwrap_or_else(|e| {
             panic!("Failed to create 'PAPER_PLUGIN_REGEX': {}", e);
         });
-    static ref PORT_REGEX: Regex = Regex::new(r".*:(\d+)").unwrap_or_else(|e| {
+    static ref PORT_REGEX: Regex = Regex::new(r":(\b\d{4,5}\b)").unwrap_or_else(|e| {
         panic!("Failed to create 'PORT_REGEX': {}", e);
     });
     static ref MINECRAFT_VERSION_REGEX: Regex =
@@ -52,11 +51,7 @@ impl StaticAnalyzer {
         None
     }
 
-    pub fn port(name: String, mut line: &str, must_contain: String) -> Option<(String, u16)> {
-        if let Some(split) = line.split_once("]") {
-            line = split.1;
-        };
-
+    pub fn port(name: String, line: &str, must_contain: String) -> Option<(String, u16)> {
         if line.to_lowercase().contains(&must_contain.to_lowercase()) && PORT_REGEX.is_match(line) {
             let captures = PORT_REGEX.captures(line)?;
 
