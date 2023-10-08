@@ -12,6 +12,7 @@ regex = "1.9.5"
 rhai = { version = "1.16.2", features = ["only_i32"] }
 semver = "1.0.19"
 serde = { version = "1.0.188", features = ["derive"] }
+thiserror = "1.0.49"
 tokio = { version = "1.32.0", features = ["full"] }
 tokio-stream = { version = "0.1.14", features = ["io-util"] }
 toml = "0.8.1"
