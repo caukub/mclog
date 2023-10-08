@@ -21,7 +21,7 @@ impl Log {
 
     pub fn has_line2(self, to_find: ImmutableString, identifier: String) -> Dynamic {
         let regex = REPLACE_NUMS_REGEX.replace_all(&to_find, "(.*)");
-        let regex = Regex::new(regex.as_ref()).unwrap();
+        let regex = Regex::new(&regex).unwrap();
 
         let mut capturess: Captures = Captures {
             captures: HashMap::new(),
