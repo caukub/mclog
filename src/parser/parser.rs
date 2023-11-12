@@ -1,6 +1,6 @@
 use super::{
     delimiters::{delimiters, detect_delimiter_type, Delimiters},
-    log_level::LogLevel,
+    log_level::EntryLevel,
 };
 
 pub struct Parser {
@@ -9,7 +9,7 @@ pub struct Parser {
 }
 
 pub struct LogEntry {
-    log_level: LogLevel,
+    log_level: EntryLevel,
     prefix: String,
     message: String,
 }
@@ -20,6 +20,17 @@ impl Parser {
         let delimiters = delimiters(&delimiter_type, custom_delimiters);
 
         Self { lines, delimiters }
+    }
+
+    fn split(&self, chunk: String, delimiter: &String) -> (String, String) {
+        const EMPTY_TUPLE: (&'static str, &'static str) = ("", "");
+
+        let split = chunk.split_once(delimiter).unwrap_or(EMPTY_TUPLE);
+
+        let prefix = format!("{}{}", split.0, delimiter);
+        let message = split.1.to_string();
+
+        (prefix, message)
     }
 
     fn parse(&self) -> Vec<LogEntry> {
@@ -43,48 +54,44 @@ impl Parser {
                 let chunk = self.lines[last_idx_with_level..=previous_line_idx].join("\n");
 
                 match self.log_level(&chunk) {
-                    LogLevel::Info => {
-                        let splitted = chunk.split_once(&self.delimiters.info.info).unwrap();
+                    EntryLevel::Info => {
+                        let split = self.split(chunk, &self.delimiters.info.info);
 
-                        prefix = format!("{}{}", splitted.0, self.delimiters.info.info);
-                        message = splitted.1.to_string();
+                        prefix = split.0;
+                        message = split.1;
                     }
-                    LogLevel::Warn => {
-                        let splitted: (&str, &str);
-
+                    EntryLevel::Warn => {
                         if chunk.contains(&self.delimiters.warn.warn) {
-                            splitted = chunk.split_once(&self.delimiters.warn.warn).unwrap();
+                            let split = self.split(chunk, &self.delimiters.warn.warn);
 
-                            prefix = format!("{}{}", splitted.0, self.delimiters.warn.warn);
-                            message = splitted.1.to_string();
+                            prefix = split.0;
+                            message = split.1;
                         } else if chunk.contains(&self.delimiters.warn.warning) {
-                            splitted = chunk.split_once(&self.delimiters.warn.warning).unwrap();
+                            let split = self.split(chunk, &self.delimiters.warn.warning);
 
-                            prefix = format!("{}{}", splitted.0, self.delimiters.warn.warn);
-                            message = splitted.1.to_string();
+                            prefix = split.0;
+                            message = split.1;
                         }
                     }
-                    LogLevel::Error => {
-                        let splitted: (&str, &str);
-
+                    EntryLevel::Error => {
                         if chunk.contains(&self.delimiters.error.error) {
-                            splitted = chunk.split_once(&self.delimiters.error.error).unwrap();
+                            let split = self.split(chunk, &self.delimiters.error.error);
 
-                            prefix = format!("{}{}", splitted.0, self.delimiters.error.error);
-                            message = splitted.1.to_string();
+                            prefix = split.0;
+                            message = split.1;
                         } else if chunk.contains(&self.delimiters.error.severe) {
-                            splitted = chunk.split_once(&self.delimiters.error.severe).unwrap();
+                            let split = self.split(chunk, &self.delimiters.error.severe);
 
-                            prefix = format!("{}{}", splitted.0, self.delimiters.error.severe);
-                            message = splitted.1.to_string();
+                            prefix = split.0;
+                            message = split.1;
                         } else if chunk.contains(&self.delimiters.error.fatal) {
-                            splitted = chunk.split_once(&self.delimiters.error.fatal).unwrap();
+                            let split = self.split(chunk, &self.delimiters.error.fatal);
 
-                            prefix = format!("{}{}", splitted.0, self.delimiters.error.fatal);
-                            message = splitted.1.to_string();
+                            prefix = split.0;
+                            message = split.1;
                         }
                     }
-                    LogLevel::Custom => {
+                    EntryLevel::Custom => {
                         let delimiter: Vec<&String> = self
                             .delimiters
                             .custom
@@ -93,12 +100,12 @@ impl Parser {
                             .collect();
                         let delimiter = delimiter[0].as_str();
 
-                        let splitted = chunk.split_once(delimiter).unwrap();
+                        let split = chunk.split_once(delimiter).unwrap();
 
-                        prefix = format!("{}{}", splitted.0, delimiter);
-                        message = splitted.1.to_string();
+                        prefix = format!("{}{}", split.0, delimiter);
+                        message = split.1.to_string();
                     }
-                    LogLevel::Unknown => {
+                    EntryLevel::Unknown => {
                         prefix = String::new();
                         message = chunk;
                     }
@@ -131,48 +138,44 @@ impl Parser {
                 let message = &self.lines[last_line_idx];
 
                 match level {
-                    LogLevel::Info => {
-                        let splitted = message.split_once(&self.delimiters.info.info).unwrap();
+                    EntryLevel::Info => {
+                        let split = self.split(message.to_owned(),&self.delimiters.info.info);
 
-                        i_prefix = format!("{}{}", splitted.0, self.delimiters.info.info);
-                        i_message = splitted.1.to_string();
+                        i_prefix = split.0;
+                        i_message = split.1;
                     }
-                    LogLevel::Warn => {
+                    EntryLevel::Warn => {
                         if message.contains(&self.delimiters.warn.warn) {
-                            let splitted = message.split_once(&self.delimiters.warn.warn).unwrap();
+                            let split = self.split(message.to_owned(),&self.delimiters.warn.warn);
 
-                            i_prefix = format!("{}{}", splitted.0, self.delimiters.warn.warn);
-                            i_message = splitted.1.to_string();
+                            i_prefix = split.0;
+                            i_message = split.1;
                         } else if message.contains(&self.delimiters.warn.warning) {
-                            let splitted =
-                                message.split_once(&self.delimiters.warn.warning).unwrap();
+                            let split = self.split(message.to_owned(), &self.delimiters.warn.warning);
 
-                            i_prefix = format!("{}{}", splitted.0, self.delimiters.warn.warning);
-                            i_message = splitted.1.to_string();
+                            i_prefix = split.0;
+                            i_message = split.1;
                         }
                     }
-                    LogLevel::Error => {
+                    EntryLevel::Error => {
                         if message.contains(&self.delimiters.error.error) {
-                            let splitted =
-                                message.split_once(&self.delimiters.error.error).unwrap();
+                            let split = self.split(message.to_owned(), &self.delimiters.error.error);
 
-                            i_prefix = format!("{}{}", splitted.0, self.delimiters.error.error);
-                            i_message = splitted.1.to_string();
+                            i_prefix = split.0;
+                            i_message = split.1;
                         } else if message.contains(&self.delimiters.error.severe) {
-                            let splitted =
-                                message.split_once(&self.delimiters.error.severe).unwrap();
+                            let split = self.split(message.to_owned(), &self.delimiters.error.severe);
 
-                            i_prefix = format!("{}{}", splitted.0, self.delimiters.error.severe);
-                            i_message = splitted.1.to_string();
+                            i_prefix = split.0;
+                            i_message = split.1;
                         } else if message.contains(&self.delimiters.error.fatal) {
-                            let splitted =
-                                message.split_once(&self.delimiters.error.fatal).unwrap();
+                            let split = self.split(message.to_owned(), &self.delimiters.error.fatal);
 
-                            i_prefix = format!("{}{}", splitted.0, self.delimiters.error.fatal);
-                            i_message = splitted.1.to_string();
+                            i_prefix = split.0;
+                            i_message = split.1;
                         }
                     }
-                    LogLevel::Custom => {
+                    EntryLevel::Custom => {
                         let delimiter: Vec<&String> = self
                             .delimiters
                             .custom
@@ -181,10 +184,10 @@ impl Parser {
                             .collect();
                         let delimiter = delimiter[0].as_str();
 
-                        let splitted = message.split_once(delimiter).unwrap();
+                        let split = self.split(message.to_owned(), &delimiter.to_string());
 
-                        i_prefix = format!("{}{}", splitted.0, delimiter);
-                        i_message = splitted.1.to_string();
+                        i_prefix = split.0;
+                        i_message = split.1;
                     }
                     _ => {}
                 }
@@ -211,13 +214,13 @@ impl Parser {
 
         for part in parts {
             let html_part = match part.log_level {
-                LogLevel::Info => format!(
+                EntryLevel::Info => format!(
                     "<span class=\"{}\">{}</span>{}\n",
                     part.log_level,
                     html_escape::encode_text(part.prefix.as_str()),
                     html_escape::encode_text(part.message.as_str())
                 ),
-                LogLevel::Custom => format!(
+                EntryLevel::Custom => format!(
                     "<span class=\"{}\">{}</span>{}\n",
                     part.log_level,
                     html_escape::encode_text(part.prefix.as_str()),
@@ -236,27 +239,27 @@ impl Parser {
         html_parts
     }
 
-    fn log_level(&self, line: &str) -> LogLevel {
+    fn log_level(&self, line: &str) -> EntryLevel {
         let info_delimiters = &self.delimiters.info;
         let warn_delimiters = &self.delimiters.warn;
         let error_delimiters = &self.delimiters.error;
 
         if line.contains(&info_delimiters.info) {
-            return LogLevel::Info;
+            return EntryLevel::Info;
         } else if line.contains(&warn_delimiters.warn) || line.contains(&warn_delimiters.warning) {
-            return LogLevel::Warn;
+            return EntryLevel::Warn;
         } else if line.contains(&error_delimiters.error)
             || line.contains(&error_delimiters.severe)
             || line.contains(&error_delimiters.fatal)
         {
-            return LogLevel::Error;
+            return EntryLevel::Error;
         } else if self.delimiters.custom.iter().any(|dm| line.contains(dm)) {
-            return LogLevel::Custom;
+            return EntryLevel::Custom;
         }
-        LogLevel::Unknown
+        EntryLevel::Unknown
     }
 
     fn contain_log_level(&self, line: &str) -> bool {
-        !matches!(self.log_level(line), LogLevel::Unknown)
+        !matches!(self.log_level(line), EntryLevel::Unknown)
     }
 }
