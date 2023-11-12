@@ -39,34 +39,6 @@ impl Log {
         lines
     }
 
-    pub async fn lines_hideips(self) -> Vec<String> {
-        let mut lines = Vec::new();
-
-        let mut lines_stream = LinesStream::new(self.lines);
-
-        let mut matched_plugin_versions = Vec::new();
-
-        while let Some(line) = lines_stream.next().await {
-            if let Ok(line) = line {
-                if let Some(plugin) = StaticAnalyzer::plugin_bukkit(&line) {
-                    matched_plugin_versions.push(plugin.version);
-                    lines.push(line);
-                } else if !matched_plugin_versions
-                    .iter()
-                    .any(|version| line.contains(version))
-                {
-                    let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
-
-                    lines.push(cleared_line)
-                } else {
-                    lines.push(line);
-                }
-            }
-        }
-
-        lines
-    }
-
     pub async fn first_n_lines(self, limit: usize) -> Vec<String> {
         let mut lines = Vec::new();
 
@@ -74,13 +46,16 @@ impl Log {
 
         while let Some(line) = lines_stream.next().await {
             if let Ok(line) = line {
-                lines.push(line);
-            } else {
-                continue;
+                lines.push(line)
             }
         }
 
         lines
+    }
+
+    pub async fn lines_hideips(self) -> Vec<String> {
+        let mut _lines_stream = LinesStream::new(self.lines);
+        todo!()
     }
 
     pub async fn first_n_lines_hideips(self, limit: usize) -> Vec<String> {
@@ -90,20 +65,26 @@ impl Log {
 
         let mut matched_plugin_versions = Vec::new();
 
+        let lines_to_ignore = vec![
+            "plugins/",
+            "Forge Mod Loader version",
+            "MinecraftForge v",
+            "127.0.0.1",
+            "0.0.0.0",
+            "openjdk",
+            "OpenJDK",
+        ];
+
         while let Some(line) = lines_stream.next().await {
             if let Ok(line) = line {
                 if let Some(plugin) = StaticAnalyzer::plugin_bukkit(&line) {
                     matched_plugin_versions.push(plugin.version);
                     lines.push(line);
-                } else if !matched_plugin_versions
-                    .iter()
-                    .any(|version| line.contains(version))
-                {
-                    let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
-
-                    lines.push(cleared_line)
-                } else {
+                } else if matched_plugin_versions.iter().any(|version| line.contains(version)) || lines_to_ignore.iter().any(|i| line.contains(i)) {
                     lines.push(line);
+                } else {
+                    let cleared_line = IPV4_REGEX.replace_all(&line, "{ipv4}").to_string();
+                    lines.push(cleared_line);
                 }
             }
         }
