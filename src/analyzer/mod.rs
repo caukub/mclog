@@ -118,7 +118,7 @@ impl Analyzer {
         const QUERY_PORT_MESSAGE: &str = "Query running on";
         const RCON_PORT_MESSAGE: &str = "RCON running on";
 
-        let mut vanilla_ports: VanillaPorts = VanillaPorts {
+        let mut vanilla_ports = VanillaPorts {
             server: None,
             query: None,
             rcon: None,
@@ -144,62 +144,43 @@ impl Analyzer {
         vanilla_ports
     }
 
+    fn ports(&self, ports: &HashMap<String, Vec<String>>, limit: usize) -> HashMap<String, u16> {
+        let mut port_list = HashMap::new();
+        for line in self.lines.iter().take(limit) {
+            for port in ports {
+                for must_contain in port.1 {
+                    if let Some(result) = StaticAnalyzer::port(
+                        port.0.to_owned(),
+                        line.as_str(),
+                        must_contain.to_owned(),
+                    ) {
+                        port_list.insert(result.0, result.1);
+                    }
+                }
+            }
+        }
+
+        port_list
+    }
+
     fn plugin_ports(
         &self,
         ports_root: &PortsRoot,
         ports_lines_limit: usize,
     ) -> HashMap<String, u16> {
-        let mut ports = HashMap::new();
-
         if !self.is_bukkit_based() {
-            return ports;
+            return HashMap::new();
         }
 
-        for line in self.lines.iter().take(ports_lines_limit) {
-            for port in &ports_root.ports.plugins {
-                for must_contain in port.1 {
-                    match StaticAnalyzer::port(
-                        port.0.to_owned(),
-                        line.as_str(),
-                        must_contain.to_owned(),
-                    ) {
-                        None => {}
-                        Some(result) => {
-                            ports.insert(result.0, result.1);
-                        }
-                    }
-                }
-            }
-        }
-
-        ports
+        self.ports(&ports_root.ports.plugins, ports_lines_limit)
     }
 
     fn mod_ports(&self, ports_root: &PortsRoot, ports_lines_limit: usize) -> HashMap<String, u16> {
-        let mut ports = HashMap::new();
-
         if !self.is_modded() {
-            return ports;
+            return HashMap::new();
         }
 
-        for line in self.lines.iter().take(ports_lines_limit) {
-            for port in &ports_root.ports.mods {
-                for must_contain in port.1 {
-                    match StaticAnalyzer::port(
-                        port.0.to_owned(),
-                        line.as_str(),
-                        must_contain.to_owned(),
-                    ) {
-                        None => {}
-                        Some(result) => {
-                            ports.insert(result.0, result.1);
-                        }
-                    }
-                }
-            }
-        }
-
-        ports
+        self.ports(&ports_root.ports.mods, ports_lines_limit)
     }
 
     pub fn build(self, plugins_limit: usize, ports_limit: usize) -> DynamicAnalyzerDetails {
@@ -227,6 +208,7 @@ impl Analyzer {
 }
 
 #[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct DynamicAnalyzerDetails {
     #[serde(skip_serializing)]
     pub lines: Vec<String>,
