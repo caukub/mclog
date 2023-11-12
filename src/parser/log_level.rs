@@ -1,5 +1,7 @@
+use std::fmt::Formatter;
+
 #[derive(Clone, Copy)]
-pub enum LogLevel {
+pub enum EntryLevel {
     Info,
     Warn,
     Error,
@@ -7,14 +9,14 @@ pub enum LogLevel {
     Unknown,
 }
 
-impl std::fmt::Display for LogLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Display for EntryLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            LogLevel::Info => write!(f, "i"),
-            LogLevel::Warn => write!(f, "w"),
-            LogLevel::Error => write!(f, "e"),
-            LogLevel::Custom => write!(f, "p"),
-            LogLevel::Unknown => write!(f, "u"),
+            EntryLevel::Info => write!(f, "i"),
+            EntryLevel::Warn => write!(f, "w"),
+            EntryLevel::Error => write!(f, "e"),
+            EntryLevel::Custom => write!(f, "c"),
+            EntryLevel::Unknown => write!(f, "u"),
         }
     }
 }
