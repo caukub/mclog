@@ -11,9 +11,16 @@ lazy_static! {
         Regex::new(r"\[([^\]]*)\] Loading server plugin (.*) v(.*)").unwrap_or_else(|e| {
             panic!("Failed to create 'PAPER_PLUGIN_REGEX': {}", e);
         });
-    static ref PORT_REGEX: Regex = Regex::new(r":(\b\d{4,5}\b)").unwrap_or_else(|e| {
+
+    // This regex matches 4 or more digits because reserved ports shouldn't be used
+    static ref PORT_REGEX: Regex = Regex::new(r":(\d{4,5})").unwrap_or_else(|e| {
         panic!("Failed to create 'PORT_REGEX': {}", e);
     });
+
+    static ref NOCOLON_PORT_REGEX: Regex = Regex::new(r"(\d{4,5})").unwrap_or_else(|e| {
+        panic!("Failed to create 'NOCOLON_PORT_REGEX': {}", e);
+    });
+
     static ref MINECRAFT_VERSION_REGEX: Regex =
         Regex::new(r"Starting minecraft server version (.*)").unwrap_or_else(|e| {
             panic!("Failed to create 'MINECRAFT_VERSION_REGEX': {}", e);
@@ -52,14 +59,26 @@ impl StaticAnalyzer {
     }
 
     pub fn port(name: String, line: &str, must_contain: String) -> Option<(String, u16)> {
-        if line.to_lowercase().contains(&must_contain.to_lowercase()) && PORT_REGEX.is_match(line) {
-            let captures = PORT_REGEX.captures(line)?;
+        if line.to_lowercase().contains(&must_contain.to_lowercase()) {
+            if PORT_REGEX.is_match(line) {
+                let captures = PORT_REGEX.captures(line)?;
 
-            let capture = captures.get(1)?;
+                let capture = captures.get(1)?;
 
-            let port = capture.as_str().parse::<u16>().ok()?;
+                let port = capture.as_str().parse::<u16>().ok()?;
 
-            return Some((name, port));
+                return Some((name, port));
+            }
+
+            if NOCOLON_PORT_REGEX.is_match(line) {
+                let captures = NOCOLON_PORT_REGEX.captures(line)?;
+
+                let capture = captures.get(1)?;
+
+                let port = capture.as_str().parse::<u16>().ok()?;
+
+                return Some((name, port));
+            }
         }
         None
     }
@@ -89,7 +108,9 @@ impl StaticAnalyzer {
             "directleaks",
             "blackspigot",
             "nulled",
+            "spigotunlocked",
             "plugin integrity has been compromised",
+            "cracked"
         ]; // ඞඞඞ
 
         if sus.iter().any(|s| line.to_lowercase().contains(s)) {
