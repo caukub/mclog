@@ -24,6 +24,7 @@ lazy_static! {
     });
 }
 
+#[derive(Clone, Copy)]
 pub enum DelimiterType {
     BracketColon,
     Bracket,
@@ -43,93 +44,72 @@ impl std::fmt::Display for DelimiterType {
 }
 
 pub struct Delimiters {
-    pub info: InfoDelimiters,
-    pub warn: WarnDelimiters,
-    pub error: ErrorDelimiters,
+    pub info: Vec<String>,
+    pub warn: Vec<String>,
+    pub error: Vec<String>,
     pub custom: Vec<String>,
 }
 
-pub struct InfoDelimiters {
-    pub info: String,
-}
+impl Delimiters {
+    pub fn new(custom_delimiters: Vec<String>, delimiter_type: DelimiterType) -> Self {
+        let info = vec!["INFO"];
+        let warn = vec!["WARN", "WARNING"];
+        let error = vec!["ERROR", "SEVERE", "FATAL"];
+        let custom = custom_delimiters;
 
-pub struct WarnDelimiters {
-    pub warn: String,
-    pub warning: String,
-}
+        let info = info
+            .iter()
+            .map(|del| format!("{del}{delimiter_type}"))
+            .collect();
+        let warn = warn
+            .iter()
+            .map(|del| format!("{del}{delimiter_type}"))
+            .collect();
+        let error = error
+            .iter()
+            .map(|del| format!("{del}{delimiter_type}"))
+            .collect();
+        let custom = custom
+            .iter()
+            .map(|del| format!("{del}{delimiter_type}"))
+            .collect();
 
-pub struct ErrorDelimiters {
-    pub error: String,
-    pub severe: String,
-    pub fatal: String,
-}
-
-pub fn delimiters(delimiter_type: &DelimiterType, custom_delimiters: Vec<String>) -> Delimiters {
-    let info = InfoDelimiters {
-        info: format!("INFO{}", delimiter_type),
-    };
-
-    let warn = WarnDelimiters {
-        warn: format!("WARN{}", delimiter_type),
-        warning: format!("WARNING{}", delimiter_type),
-    };
-
-    let error = ErrorDelimiters {
-        error: format!("ERROR{}", delimiter_type),
-        fatal: format!("FATAL{}", delimiter_type),
-        severe: format!("SEVERE{}", delimiter_type),
-    };
-
-    Delimiters {
-        info,
-        warn,
-        error,
-        custom: custom_delimiters,
+        Self {
+            info,
+            warn,
+            error,
+            custom,
+        }
     }
+}
+
+const DELIMITER_MAX_MATCHES: usize = 125;
+
+fn count_matches(lines: &[String], regex: Regex) -> usize {
+    lines
+        .iter()
+        .take(DELIMITER_MAX_MATCHES)
+        .filter(|line| regex.is_match(line))
+        .count()
 }
 
 pub fn detect_delimiter_type(lines: &[String]) -> DelimiterType {
-    let mut bracket_colon_matches: (DelimiterType, u16) = (DelimiterType::BracketColon, 0);
-    let mut bracket_matches: (DelimiterType, u16) = (DelimiterType::Bracket, 0);
-    let mut colon_matches: (DelimiterType, u16) = (DelimiterType::Colon, 0);
-    let mut nocolon_nobracket_matches: (DelimiterType, u16) = (DelimiterType::NoColonNoBracket, 0);
+    let delimiter_regexes: Vec<(&'static Regex, DelimiterType)> = vec![
+        (&NOCOLON_NOBRACKET_REGEX, DelimiterType::NoColonNoBracket),
+        (&COLON_REGEX, DelimiterType::Colon),
+        (&BRACKET_REGEX, DelimiterType::Bracket),
+        (&BRACKET_COLON_REGEX, DelimiterType::BracketColon),
+    ];
+    let delimiter_type = delimiter_regexes
+        .iter()
+        .map(|(&ref regex, delimiter_type)| {
+            let count = count_matches(lines, regex.clone());
+            (count, delimiter_type)
+        })
+        .max_by_key(|&(count, _)| count)
+        .unwrap_or((0, &DelimiterType::NoColonNoBracket))
+        .1
+        .to_owned();
 
-    for (index, entry) in lines.iter().enumerate() {
-        if index > 300
-            || bracket_colon_matches.1 > 15
-            || bracket_matches.1 > 15
-            || colon_matches.1 > 15
-            || nocolon_nobracket_matches.1 > 15
-        {
-            break;
-        }
-        let entry = entry.as_str();
-
-        if BRACKET_COLON_REGEX.is_match(entry) {
-            bracket_colon_matches.1 += 1;
-        } else if BRACKET_REGEX.is_match(entry) {
-            bracket_matches.1 += 1;
-        } else if COLON_REGEX.is_match(entry) {
-            colon_matches.1 += 1;
-        } else if NOCOLON_NOBRACKET_REGEX.is_match(entry) {
-            nocolon_nobracket_matches.1 += 1;
-        }
-    }
-
-    let (bracket_colon, bracket, colon, nocolon_nobracket) = (
-        bracket_colon_matches.1,
-        bracket_matches.1,
-        colon_matches.1,
-        nocolon_nobracket_matches.1,
-    );
-
-    if bracket_colon >= bracket && bracket_colon >= colon && bracket_colon >= nocolon_nobracket {
-        bracket_colon_matches.0
-    } else if bracket >= colon && bracket >= nocolon_nobracket {
-        bracket_matches.0
-    } else if colon >= nocolon_nobracket {
-        colon_matches.0
-    } else {
-        nocolon_nobracket_matches.0
-    }
+    delimiter_type
 }

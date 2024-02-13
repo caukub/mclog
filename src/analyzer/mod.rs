@@ -22,6 +22,45 @@ pub enum Platform {
     Velocity,
 }
 
+impl PlatformDetails for Platform {
+    fn name(&self) -> &'static str {
+        match self {
+            Platform::Vanilla => "vanilla",
+            Platform::CraftBukkit => "craftbukkit",
+            Platform::Spigot => "spigot",
+            Platform::Paper => "paper",
+            Platform::Pufferfish => "pufferfish",
+            Platform::Purpur => "purpur",
+            Platform::Fabric => "fabric",
+            Platform::Forge => "forge",
+            Platform::BungeeCord => "bungeecord",
+            Platform::Waterfall => "waterfall",
+            Platform::Velocity => "velocity",
+        }
+    }
+
+    fn display_name(&self) -> &'static str {
+        match self {
+            Platform::Vanilla => "Vanilla",
+            Platform::CraftBukkit => "CraftBukkit",
+            Platform::Spigot => "Spigot",
+            Platform::Paper => "Paper",
+            Platform::Pufferfish => "Puferfish",
+            Platform::Purpur => "Purpur",
+            Platform::Fabric => "Fabric",
+            Platform::Forge => "Forge",
+            Platform::BungeeCord => "BungeeCord",
+            Platform::Waterfall => "Waterfall",
+            Platform::Velocity => "Velocity",
+        }
+    }
+}
+
+pub trait PlatformDetails {
+    fn name(&self) -> &'static str;
+    fn display_name(&self) -> &'static str;
+}
+
 #[derive(Serialize, Debug, Clone)]
 pub struct Ports {
     pub vanilla: VanillaPorts,
@@ -77,16 +116,18 @@ impl Analyzer {
     fn plugins(&self, line_limit: usize) -> HashMap<String, String> {
         let mut plugins = HashMap::new();
 
-        for line in self.lines.iter().take(line_limit) {
-            let line = line.as_str();
+        if self.is_bukkit_based() {
+            for line in self.lines.iter().take(line_limit) {
+                let xd = StaticAnalyzer::plugin_bukkit(line);
 
-            if self.is_proxy() {
-            } else if self.is_bukkit_based() {
-                match StaticAnalyzer::plugin_bukkit(line) {
-                    None => continue,
-                    Some(plugin) => plugins.insert(plugin.name, plugin.version),
-                };
+                if xd.clone().is_some() {
+                    plugins.insert(xd.clone().unwrap().name, xd.unwrap().version);
+                }
             }
+        } else if self.is_proxy() {
+            todo!()
+        } else if self.is_modded() {
+            todo!()
         }
 
         plugins

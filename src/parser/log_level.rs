@@ -1,6 +1,6 @@
 use std::fmt::Formatter;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum EntryLevel {
     Info,
     Warn,

@@ -1,4 +1,4 @@
-use crate::analyzer::{DynamicAnalyzerDetails, Platform};
+use crate::analyzer::{DynamicAnalyzerDetails, PlatformDetails};
 
 #[derive(Clone)]
 pub struct Server {
@@ -34,18 +34,6 @@ impl Server {
     }
 
     pub fn platform(&mut self) -> &'static str {
-        match self.dad.platform {
-            Platform::Vanilla => "vanilla",
-            Platform::CraftBukkit => "bukkit",
-            Platform::Spigot => "spigot",
-            Platform::Paper => "paper",
-            Platform::Pufferfish => "pufferfish",
-            Platform::Purpur => "purpur",
-            Platform::Fabric => "fabric",
-            Platform::Forge => "forge",
-            Platform::BungeeCord => "bungeecord",
-            Platform::Waterfall => "waterfall",
-            Platform::Velocity => "velocity",
-        }
+        self.dad.platform.name()
     }
 }

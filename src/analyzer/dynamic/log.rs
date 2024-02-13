@@ -16,7 +16,7 @@ impl Log {
     }
 
     pub fn has_line(self, to_find: ImmutableString) -> bool {
-        self.dad.lines.iter().any(|line| line.contains(&**to_find))
+        self.dad.lines.iter().any(|line| line.contains(&*to_find))
     }
 
     pub fn has_line2(self, to_find: ImmutableString, identifier: String) -> Dynamic {

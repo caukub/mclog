@@ -58,6 +58,22 @@ impl StaticAnalyzer {
         None
     }
 
+    pub fn plugin_bungeecord() {
+        todo!()
+    }
+
+    pub fn plugin_velocity() {
+        todo!()
+    }
+
+    pub fn mod_fabric() {
+        todo!()
+    }
+
+    pub fn mod_forge() {
+        todo!()
+    }
+
     pub fn port(name: String, line: &str, must_contain: String) -> Option<(String, u16)> {
         if line.to_lowercase().contains(&must_contain.to_lowercase()) {
             if PORT_REGEX.is_match(line) {
@@ -97,7 +113,7 @@ impl StaticAnalyzer {
     pub fn noproxy_server_version(line: &str) -> Option<String> {
         if MINECRAFT_VERSION_REGEX.is_match(line) {
             let captures = MINECRAFT_VERSION_REGEX.captures(line)?;
-            let version = captures.get(1).unwrap().as_str().to_string();
+            let version = captures.get(1)?.as_str().to_string();
             return Some(version);
         }
         None
@@ -110,10 +126,14 @@ impl StaticAnalyzer {
             "nulled",
             "spigotunlocked",
             "plugin integrity has been compromised",
-            "cracked"
+            "cracked",
         ]; // ඞඞඞ
 
-        if sus.iter().any(|s| line.to_lowercase().contains(s)) {
+        let allowed = ["crackshot"];
+
+        if sus.iter().any(|s| line.to_lowercase().contains(s))
+            && !allowed.iter().any(|allowed| line.contains(allowed))
+        {
             return Some(line.to_string());
         }
 
