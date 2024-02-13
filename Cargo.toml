@@ -8,6 +8,7 @@ description = "async parser and analyzer for Minecraft server logs"
 [dependencies]
 html-escape = "0.2.13"
 lazy_static = "1.4.0"
+log = "0.4.20"
 regex = "1.9.5"
 rhai = { version = "1.16.2", features = ["only_i32"] }
 semver = "1.0.19"
