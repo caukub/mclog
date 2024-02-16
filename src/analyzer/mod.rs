@@ -118,15 +118,11 @@ impl Analyzer {
 
         if self.is_bukkit_based() {
             for line in self.lines.iter().take(line_limit) {
-                let xd = StaticAnalyzer::plugin_bukkit(line);
-
-                if xd.clone().is_some() {
-                    plugins.insert(xd.clone().unwrap().name, xd.unwrap().version);
+                if let Some(plugin) = StaticAnalyzer::plugin_bukkit(line) {
+                    plugins.insert(plugin.name, plugin.version);
                 }
             }
         } else if self.is_proxy() {
-            todo!()
-        } else if self.is_modded() {
             todo!()
         }
 

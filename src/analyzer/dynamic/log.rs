@@ -50,7 +50,7 @@ impl Log {
 
                     capture_index += 1;
 
-                    if capture_index as usize + 1 == captures.len() {
+                    if (capture_index + 1) as usize == captures.len() {
                         capturesss.push(capturess.clone());
                         capture_index = 0;
                     }

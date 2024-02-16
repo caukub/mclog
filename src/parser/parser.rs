@@ -82,8 +82,8 @@ impl Parser {
 
                 log_entries.push(LogEntry {
                     log_level: last_log_level,
-                    prefix: prefix.clone(),
-                    message: message.clone(),
+                    prefix,
+                    message,
                 });
 
                 last_idx_with_level = index;
@@ -103,7 +103,7 @@ impl Parser {
             true => {
                 let mut i_prefix = String::new();
                 let mut i_message = String::new();
-                let level = self.log_level(&self.lines[last_line_idx]);
+                //let level = self.log_level(&self.lines[last_line_idx]);
                 let message = &self.lines[last_line_idx];
 
                 let log_level = self.log_level(message);

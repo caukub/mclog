@@ -97,7 +97,7 @@ impl DynamicAnalyzer {
                 Err(_) => continue,
             };
 
-            let ast = self.ast(script_content.clone());
+            let ast = self.ast(&script_content);
 
             scripts.push(Script {
                 file: file_name,
@@ -111,7 +111,7 @@ impl DynamicAnalyzer {
         scripts
     }
 
-    fn ast(&self, content: String) -> AST {
+    fn ast(&self, content: &String) -> AST {
         let content = format!(
             "
             let ports = new_ports(dad);

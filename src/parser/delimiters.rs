@@ -52,9 +52,9 @@ pub struct Delimiters {
 
 impl Delimiters {
     pub fn new(custom_delimiters: Vec<String>, delimiter_type: DelimiterType) -> Self {
-        let info = vec!["INFO"];
-        let warn = vec!["WARN", "WARNING"];
-        let error = vec!["ERROR", "SEVERE", "FATAL"];
+        let info = ["INFO"];
+        let warn = ["WARN", "WARNING"];
+        let error = ["ERROR", "SEVERE", "FATAL"];
         let custom = custom_delimiters;
 
         let info = info
