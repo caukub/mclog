@@ -73,6 +73,7 @@ impl Log {
             "at (", // Shotyr[/{ipv4}:58381] logged in with entity id 675
                    // at ([world]-102.50147912322777, 94.88908505183846, -117.07016565695118)
                    // SetSpawn v4.8
+            "logged in with entity id",
         ];
 
         while let Some(Ok(line)) = lines_stream.next().await {
