@@ -3,12 +3,12 @@ use regex::Regex;
 use std::sync::LazyLock;
 
 static SPIGOT_PLUGIN_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\[([^\]]*)\] Loading (.*) v(.*)").unwrap_or_else(|e| {
+    Regex::new(r"\[([^]]*)] Loading (.*) v(.*)").unwrap_or_else(|e| {
         panic!("Failed to create 'SPIGOT_PLUGIN_REGEX': {}", e);
     })
 });
 static PAPER_PLUGIN_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\[([^\]]*)\] Loading server plugin (.*) v(.*)").unwrap_or_else(|e| {
+    Regex::new(r"\[([^]]*)] Loading server plugin (.*) v(.*)").unwrap_or_else(|e| {
         panic!("Failed to create 'PAPER_PLUGIN_REGEX': {}", e);
     })
 });
