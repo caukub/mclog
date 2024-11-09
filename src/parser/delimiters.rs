@@ -107,6 +107,8 @@ pub fn detect_delimiter_type(lines: &[String]) -> DelimiterType {
         (&BRACKET_REGEX, DelimiterType::Bracket),
         (&BRACKET_COLON_REGEX, DelimiterType::BracketColon),
     ];
+
+    #[allow(clippy::needless_borrowed_reference)]
     let delimiter_type = delimiter_regexes
         .iter()
         .map(|(&ref regex, delimiter_type)| {

@@ -39,6 +39,7 @@ impl Parser {
 
         let last_line_idx = self.lines.len() - 1;
 
+        #[allow(unused_assignments)]
         let mut prefix = String::new();
         #[allow(unused_assignments)]
         let mut message = String::new();
@@ -110,7 +111,7 @@ impl Parser {
                 let log_level = self.log_level(message);
 
                 let entry_level = log_level.0;
-                let delimiter = log_level.1.unwrap_or_else(|| "".to_string());
+                let delimiter = log_level.1.unwrap_or_default();
 
                 match entry_level {
                     EntryLevel::Info | EntryLevel::Warn | EntryLevel::Error => {

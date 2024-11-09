@@ -8,7 +8,7 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use {log::Log, plugins::Plugins, ports::Ports, server::Server};
+use {plugins::Plugins, ports::Ports, server::Server};
 
 pub mod chunks;
 pub mod plugins;
