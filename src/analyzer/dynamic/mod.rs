@@ -28,6 +28,7 @@ pub struct Script {
     pub ast: AST,
 }
 
+#[derive(Debug)]
 pub enum ScriptPlatform {
     Global,
     NoProxy,
@@ -40,7 +41,7 @@ pub enum ScriptPlatform {
 }
 
 impl ScriptPlatform {
-    fn directory(&self) -> impl AsRef<Path> {
+    pub fn directory(&self) -> impl AsRef<Path> {
         let dir = match self {
             ScriptPlatform::Global => "global",
             ScriptPlatform::NoProxy => "noproxy",
@@ -53,6 +54,20 @@ impl ScriptPlatform {
         };
 
         SCRIPTS_DIRECTORY.join(dir)
+    }
+
+    pub fn iter() -> impl Iterator<Item = ScriptPlatform> {
+        [
+            ScriptPlatform::Global,
+            ScriptPlatform::NoProxy,
+            ScriptPlatform::Bukkit,
+            ScriptPlatform::Forge,
+            ScriptPlatform::Fabric,
+            ScriptPlatform::BungeeCord,
+            ScriptPlatform::Velocity,
+            ScriptPlatform::Folia,
+        ]
+        .into_iter()
     }
 
     pub fn script_paths(&self) -> Vec<PathBuf> {
