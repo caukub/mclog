@@ -1,6 +1,8 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
+// TODO - rewrite
+
 lazy_static! {
     // WARN]:
     static ref BRACKET_COLON_REGEX: Regex = Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE)]:)").unwrap_or_else(|e| {

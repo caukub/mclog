@@ -8,11 +8,12 @@ use std::{
     path::{Path, PathBuf},
 };
 use {log::Log, plugins::Plugins, ports::Ports, server::Server};
+use crate::analyzer::dynamic::chunks::Chunks;
 
-pub mod log;
 pub mod plugins;
 pub mod ports;
 pub mod server;
+pub mod chunks;
 
 pub struct ScriptPlatform<P> {
     pub global: P,
@@ -115,9 +116,9 @@ impl DynamicAnalyzer {
         let content = format!(
             "
             let ports = new_ports(dad);
-            let log = new_log(dad);
             let plugins = new_plugins(dad);
             let server = new_server(dad);
+            let chunks = new_chunks(dad);
             {}
             return ();
             ",
@@ -220,18 +221,19 @@ impl Default for DynamicAnalyzer {
             .register_get("platform", Server::platform);
 
         engine
-            .register_type::<Log>()
-            .register_fn("new_log", Log::new)
-            .register_fn("has_line", Log::has_line)
-            .register_fn("has_line", Log::has_line2)
-            .register_fn("has_line_permissive", Log::has_line_permissive);
+            .register_type::<Chunks>()
+            .register_fn("new_chunks", Chunks::new)
+            .register_fn("has_line", Chunks::has_line)
+            .register_fn("has_line", Chunks::has_line2)
+            .register_fn("has_line_permissive", Chunks::has_line_permissive);
+
         engine
             .register_type::<Ports>()
             .register_fn("new_ports", Ports::new)
             .register_fn("get", Ports::get)
             .register_get("server", Ports::server)
             .register_get("query", Ports::query)
-            .register_get("rcon", Ports::rcon);
+            .register_get("rcon", Ports::rcon);;
 
         let current_directory = std::env::current_dir().expect("Coudln't get current directory");
         let scripts_directory = current_directory.join("scripts");

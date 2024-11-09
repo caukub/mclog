@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::parser::parser::Parser;
 
 use self::static_analyzer::StaticAnalyzer;
 
@@ -227,8 +228,10 @@ impl Analyzer {
         let ports_file = std::fs::read_to_string(ports_file_dir.as_path()).unwrap();
         let ports_root: PortsRoot = toml::from_str(ports_file.as_str()).unwrap();
 
+        let parser = Parser::new(self.lines.clone(), vec![]);
+
         DynamicAnalyzerDetails {
-            lines: self.lines.clone(),
+            chunks: parser.get_chunks(),
             plugins: self.plugins(plugins_limit),
             platform: self.platform,
             version: self.version(),
@@ -248,7 +251,7 @@ impl Analyzer {
 #[serde(rename_all = "camelCase")]
 pub struct DynamicAnalyzerDetails {
     #[serde(skip_serializing)]
-    pub lines: Vec<String>,
+    pub chunks: Vec<String>,
     pub plugins: HashMap<String, String>,
     pub platform: Platform,
     pub version: Option<String>,
@@ -287,6 +290,7 @@ fn determine_platform(lines: &[String]) -> Platform {
         }
         None => {
             if lines.iter().any(|line| line.contains(PAPER)) {
+
             } else if lines.iter().any(|line| line.contains(PURPUR)) {
                 return Platform::Purpur;
             } else if lines.iter().any(|line| line.contains(PUFFERFISH)) {

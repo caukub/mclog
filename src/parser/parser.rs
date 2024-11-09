@@ -40,6 +40,7 @@ impl Parser {
         let last_line_idx = self.lines.len() - 1;
 
         let mut prefix = String::new();
+        #[allow(unused_assignments)]
         let mut message = String::new();
 
         for (index, line) in self.lines.iter().enumerate() {
@@ -148,6 +149,18 @@ impl Parser {
         }
 
         log_entries
+    }
+
+    pub fn get_chunks(&self) -> Vec<String> {
+        let chunks = self.parse();
+
+        let mut output = Vec::new();
+
+        for chunk in chunks {
+            output.push(format!("{}{}", chunk.prefix, chunk.message))
+        }
+
+        output
     }
 
     pub fn html(&self) -> Vec<String> {

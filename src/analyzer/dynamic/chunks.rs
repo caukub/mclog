@@ -6,21 +6,22 @@ use std::collections::HashMap;
 use crate::analyzer::DynamicAnalyzerDetails;
 
 #[derive(Clone)]
-pub struct Log {
+pub struct Chunks {
     dad: DynamicAnalyzerDetails,
 }
 
-impl Log {
+impl Chunks {
     pub fn new(dad: DynamicAnalyzerDetails) -> Self {
         Self { dad }
     }
 
     pub fn has_line(self, to_find: ImmutableString) -> bool {
-        self.dad.lines.iter().any(|line| line.contains(&*to_find))
+        self.dad.chunks.iter().any(|line| line.contains(&*to_find))
     }
 
     pub fn has_line2(self, to_find: ImmutableString, identifier: String) -> Dynamic {
-        let regex = REPLACE_NUMS_REGEX.replace_all(&to_find, "(.*)");
+        // TODO (binding, escape)
+        let regex = REPLACE_NUMS_REGEX.replace_all(to_find.as_str(), "(.*)");
         let regex = Regex::new(&regex).unwrap();
 
         let mut capturess: Captures = Captures {
@@ -32,10 +33,8 @@ impl Log {
 
         let mut capture_index = 0;
 
-        for line in self.dad.lines {
-            let is_match = regex.is_match(&line);
-
-            if is_match {
+        for line in self.dad.chunks {
+            if regex.is_match(&line) {
                 let captures = regex.captures(&line).unwrap();
 
                 for idx in 0..captures.len() {
@@ -67,14 +66,14 @@ impl Log {
 
     pub fn has_line_permissive(self, to_find: ImmutableString) -> bool {
         self.dad
-            .lines
+            .chunks
             .iter()
             .any(|line| line.to_lowercase().contains(&to_find.to_lowercase()))
     }
 }
 
 lazy_static! {
-    static ref REPLACE_NUMS_REGEX: Regex = Regex::new(r"\{\d}").unwrap_or_else(|err| {
+   static ref REPLACE_NUMS_REGEX: Regex = Regex::new(r"\{\d}").unwrap_or_else(|err| {
         panic!("Failed to create 'REPLACE_NUMS_REGEX: {}'", err);
     });
 }
