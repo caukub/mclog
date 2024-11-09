@@ -7,6 +7,7 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
+use std::sync::LazyLock;
 use {log::Log, plugins::Plugins, ports::Ports, server::Server};
 use crate::analyzer::dynamic::chunks::Chunks;
 
@@ -15,21 +16,10 @@ pub mod ports;
 pub mod server;
 pub mod chunks;
 
-pub struct ScriptPlatform<P> {
-    pub global: P,
-    pub noproxy: P,
-    pub bukkit: P,
-    pub forge: P,
-    pub fabric: P,
-    pub bungeecord: P,
-    pub velocity: P,
-}
-
-impl<P: AsRef<Path>> AsRef<Path> for ScriptPlatform<P> {
-    fn as_ref(&self) -> &Path {
-        self.global.as_ref()
-    }
-}
+pub static SCRIPTS_DIRECTORY: LazyLock<PathBuf> = LazyLock::new(|| {
+    let current_directory = std::env::current_dir().unwrap();
+    current_directory.join("scripts")
+});
 
 pub struct Script {
     pub file: String,
@@ -37,6 +27,53 @@ pub struct Script {
     pub detection: HashMap<String, Detection>,
     pub path: PathBuf,
     pub ast: AST,
+}
+
+pub enum ScriptPlatform {
+    Global,
+    NoProxy,
+    Bukkit,
+    Forge,
+    Fabric,
+    BungeeCord,
+    Velocity,
+    Folia,
+}
+
+impl ScriptPlatform {
+    fn directory(&self) -> impl AsRef<Path> {
+        let dir = match self {
+            ScriptPlatform::Global => "global",
+            ScriptPlatform::NoProxy => "noproxy",
+            ScriptPlatform::Bukkit => "bukkit",
+            ScriptPlatform::Forge => "forge",
+            ScriptPlatform::Fabric => "fabric",
+            ScriptPlatform::BungeeCord => "bungeecord",
+            ScriptPlatform::Velocity => "velocity",
+            ScriptPlatform::Folia => "folia",
+        };
+
+        SCRIPTS_DIRECTORY.join(dir)
+    }
+
+    pub fn script_paths(&self) -> Vec<PathBuf> {
+        let mut files = vec![];
+
+        for file in std::fs::read_dir(self.directory()).unwrap().flatten() {
+            if file
+                .path()
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with('_')
+            {
+                continue;
+            }
+            files.push(file.path());
+        }
+        files
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -59,33 +96,13 @@ pub enum DetectionLevel {
 
 pub struct DynamicAnalyzer {
     pub engine: rhai::Engine,
-    pub script_directories: ScriptPlatform<PathBuf>,
 }
 
 impl DynamicAnalyzer {
-    fn script_paths(&self, directory: impl AsRef<Path>) -> Vec<PathBuf> {
-        let mut files = vec![];
-
-        for file in std::fs::read_dir(directory).unwrap().flatten() {
-            if file
-                .path()
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .starts_with('_')
-            {
-                continue;
-            }
-            files.push(file.path());
-        }
-        files
-    }
-
-    fn scripts(&self, paths: Vec<PathBuf>) -> Vec<Script> {
+    pub fn scripts(&self, script_platform: ScriptPlatform) -> Vec<Script> {
         let mut scripts = Vec::new();
 
-        for file in paths {
+        for file in script_platform.script_paths() {
             let file_name = file.file_name().unwrap().to_str().unwrap().to_string();
             let script_file_content = std::fs::read_to_string(&file).unwrap();
             let script_split = script_file_content.split_once("///").unwrap();
@@ -126,62 +143,6 @@ impl DynamicAnalyzer {
         );
 
         self.engine.compile(content).unwrap()
-    }
-
-    fn global_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.global)
-    }
-
-    fn noproxy_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.noproxy)
-    }
-
-    fn bukkit_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.bukkit)
-    }
-
-    fn forge_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.forge)
-    }
-
-    fn fabric_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.fabric)
-    }
-
-    fn bungeecord_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.bungeecord)
-    }
-
-    fn velocity_paths(&self) -> Vec<PathBuf> {
-        self.script_paths(&self.script_directories.velocity)
-    }
-
-    pub fn global_scripts(&self) -> Vec<Script> {
-        self.scripts(self.global_paths())
-    }
-
-    pub fn noproxy_scripts(&self) -> Vec<Script> {
-        self.scripts(self.noproxy_paths())
-    }
-
-    pub fn bukkit_scripts(&self) -> Vec<Script> {
-        self.scripts(self.bukkit_paths())
-    }
-
-    pub fn forge_scripts(&self) -> Vec<Script> {
-        self.scripts(self.forge_paths())
-    }
-
-    pub fn fabric_scripts(&self) -> Vec<Script> {
-        self.scripts(self.fabric_paths())
-    }
-
-    pub fn bungeecord_scripts(&self) -> Vec<Script> {
-        self.scripts(self.bungeecord_paths())
-    }
-
-    pub fn velocity_scripts(&self) -> Vec<Script> {
-        self.scripts(self.velocity_paths())
     }
 }
 
@@ -233,24 +194,10 @@ impl Default for DynamicAnalyzer {
             .register_fn("get", Ports::get)
             .register_get("server", Ports::server)
             .register_get("query", Ports::query)
-            .register_get("rcon", Ports::rcon);;
-
-        let current_directory = std::env::current_dir().expect("Coudln't get current directory");
-        let scripts_directory = current_directory.join("scripts");
-
-        let script_directories = ScriptPlatform {
-            global: scripts_directory.join("global"),
-            noproxy: scripts_directory.join("noproxy"),
-            bukkit: scripts_directory.join("bukkit"),
-            forge: scripts_directory.join("forge"),
-            fabric: scripts_directory.join("fabric"),
-            bungeecord: scripts_directory.join("bungeecord"),
-            velocity: scripts_directory.join("velocity"),
-        };
+            .register_get("rcon", Ports::rcon);
 
         Self {
             engine,
-            script_directories,
         }
     }
 }

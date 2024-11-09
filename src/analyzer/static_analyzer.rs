@@ -127,7 +127,7 @@ impl StaticAnalyzer {
             "spigotunlocked",
             "plugin integrity has been compromised",
             "cracked",
-        ]; // ඞඞඞ
+        ];
 
         let allowed = ["crackshot"];
 
