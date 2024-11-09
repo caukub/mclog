@@ -1,5 +1,5 @@
-use lazy_static::lazy_static;
 use regex::Regex;
+use std::sync::LazyLock;
 use tokio::{
     fs::File,
     io::{BufReader, Lines},
@@ -12,10 +12,10 @@ pub struct Log {
     lines: Lines<BufReader<File>>,
 }
 
-lazy_static! {
-    static ref IPV4_REGEX: Regex = Regex::new(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-        .unwrap_or_else(|e| { panic!("Failed to create 'IPV4_REGEX': {}", e) });
-}
+static IPV4_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+        .unwrap_or_else(|e| panic!("Failed to create 'IPV4_REGEX': {}", e))
+});
 
 impl Log {
     pub fn new(lines: Lines<BufReader<File>>) -> Self {
@@ -71,8 +71,8 @@ impl Log {
         //
         let lines_to_replace = [
             "at (", // Shotyr[/{ipv4}:58381] logged in with entity id 675
-                   // at ([world]-102.50147912322777, 94.88908505183846, -117.07016565695118)
-                   // SetSpawn v4.8
+            // at ([world]-102.50147912322777, 94.88908505183846, -117.07016565695118)
+            // SetSpawn v4.8
             "logged in with entity id",
         ];
 

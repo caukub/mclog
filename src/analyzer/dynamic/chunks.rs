@@ -1,9 +1,8 @@
-use lazy_static::lazy_static;
+use crate::analyzer::DynamicAnalyzerDetails;
 use regex::Regex;
 use rhai::{Dynamic, ImmutableString};
 use std::collections::HashMap;
-
-use crate::analyzer::DynamicAnalyzerDetails;
+use std::sync::LazyLock;
 
 #[derive(Clone)]
 pub struct Chunks {
@@ -72,11 +71,11 @@ impl Chunks {
     }
 }
 
-lazy_static! {
-   static ref REPLACE_NUMS_REGEX: Regex = Regex::new(r"\{\d}").unwrap_or_else(|err| {
+static REPLACE_NUMS_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\{\d}").unwrap_or_else(|err| {
         panic!("Failed to create 'REPLACE_NUMS_REGEX: {}'", err);
-    });
-}
+    })
+});
 
 #[derive(Clone, Debug)]
 pub struct Captures {

@@ -7,13 +7,13 @@ description = "async parser and analyzer for Minecraft server logs"
 
 [dependencies]
 html-escape = "0.2.13"
-lazy_static = "1.4.0"
-log = "0.4.20"
-regex = "1.9.5"
-rhai = { version = "1.16.2", features = ["only_i32"] }
-semver = "1.0.19"
-serde = { version = "1.0.188", features = ["derive"] }
-thiserror = "1.0.49"
-tokio = { version = "1.32.0", features = ["full"] }
-tokio-stream = { version = "0.1.14", features = ["io-util"] }
-toml = "0.8.1"
+log = "0.4.22"
+regex = "1.11.1"
+rhai = { version = "1.20.0", features = ["only_i32"] }
+semver = "1.0.21"
+serde = { version = "1.0.214", features = ["derive"] }
+thiserror = "2.0.1"
+tokio = { version = "1.41.1", features = ["full"] }
+tokio-stream = { version = "0.1.16", features = ["io-util"] }
+toml = "0.8.19"
+once_cell = "1.20.2"

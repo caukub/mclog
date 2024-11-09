@@ -1,31 +1,36 @@
 use super::Plugin;
-use lazy_static::lazy_static;
 use regex::Regex;
+use std::sync::LazyLock;
 
-lazy_static! {
-    static ref SPIGOT_PLUGIN_REGEX: Regex = Regex::new(r"\[([^\]]*)\] Loading (.*) v(.*)")
-        .unwrap_or_else(|e| {
-            panic!("Failed to create 'SPIGOT_PLUGIN_REGEX': {}", e);
-        });
-    static ref PAPER_PLUGIN_REGEX: Regex =
-        Regex::new(r"\[([^\]]*)\] Loading server plugin (.*) v(.*)").unwrap_or_else(|e| {
-            panic!("Failed to create 'PAPER_PLUGIN_REGEX': {}", e);
-        });
+static SPIGOT_PLUGIN_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\[([^\]]*)\] Loading (.*) v(.*)").unwrap_or_else(|e| {
+        panic!("Failed to create 'SPIGOT_PLUGIN_REGEX': {}", e);
+    })
+});
+static PAPER_PLUGIN_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\[([^\]]*)\] Loading server plugin (.*) v(.*)").unwrap_or_else(|e| {
+        panic!("Failed to create 'PAPER_PLUGIN_REGEX': {}", e);
+    })
+});
 
-    // This regex matches 4 or more digits because reserved ports shouldn't be used
-    static ref PORT_REGEX: Regex = Regex::new(r":(\d{4,5})").unwrap_or_else(|e| {
+// This regex matches 4 or more digits because reserved ports shouldn't be used
+static PORT_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r":(\d{4,5})").unwrap_or_else(|e| {
         panic!("Failed to create 'PORT_REGEX': {}", e);
-    });
+    })
+});
 
-    static ref NOCOLON_PORT_REGEX: Regex = Regex::new(r"(\d{4,5})").unwrap_or_else(|e| {
+static NOCOLON_PORT_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(\d{4,5})").unwrap_or_else(|e| {
         panic!("Failed to create 'NOCOLON_PORT_REGEX': {}", e);
-    });
+    })
+});
 
-    static ref MINECRAFT_VERSION_REGEX: Regex =
-        Regex::new(r"Starting minecraft server version (.*)").unwrap_or_else(|e| {
-            panic!("Failed to create 'MINECRAFT_VERSION_REGEX': {}", e);
-        });
-}
+static MINECRAFT_VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"Starting minecraft server version (.*)").unwrap_or_else(|e| {
+        panic!("Failed to create 'MINECRAFT_VERSION_REGEX': {}", e);
+    })
+});
 
 pub struct StaticAnalyzer;
 

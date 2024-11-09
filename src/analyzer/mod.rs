@@ -1,6 +1,6 @@
+use crate::parser::parser::Parser;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::parser::parser::Parser;
 
 use self::static_analyzer::StaticAnalyzer;
 
@@ -290,7 +290,6 @@ fn determine_platform(lines: &[String]) -> Platform {
         }
         None => {
             if lines.iter().any(|line| line.contains(PAPER)) {
-
             } else if lines.iter().any(|line| line.contains(PURPUR)) {
                 return Platform::Purpur;
             } else if lines.iter().any(|line| line.contains(PUFFERFISH)) {

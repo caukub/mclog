@@ -1,20 +1,19 @@
-use lazy_static::lazy_static;
+use crate::analyzer::dynamic::chunks::Chunks;
 use regex::Regex;
 use rhai::{ImmutableString, AST};
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use std::sync::LazyLock;
 use {log::Log, plugins::Plugins, ports::Ports, server::Server};
-use crate::analyzer::dynamic::chunks::Chunks;
 
+pub mod chunks;
 pub mod plugins;
 pub mod ports;
 pub mod server;
-pub mod chunks;
 
 pub static SCRIPTS_DIRECTORY: LazyLock<PathBuf> = LazyLock::new(|| {
     let current_directory = std::env::current_dir().unwrap();
@@ -196,16 +195,14 @@ impl Default for DynamicAnalyzer {
             .register_get("query", Ports::query)
             .register_get("rcon", Ports::rcon);
 
-        Self {
-            engine,
-        }
+        Self { engine }
     }
 }
 
-lazy_static! {
-    pub static ref SEMVER_REGEX: Regex = Regex::new(r"\d+(\.\d+){0,2}")
-        .unwrap_or_else(|e| { panic!("Failed to create 'SEMVER_REGEX' regex: {}", e) });
-}
+pub static SEMVER_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\d+(\.\d+){0,2}")
+        .unwrap_or_else(|e| panic!("Failed to create 'SEMVER_REGEX' regex: {}", e))
+});
 
 fn matches_version(version: Option<String>, version_requirements: ImmutableString) -> bool {
     let version = match version {

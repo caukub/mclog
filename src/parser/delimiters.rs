@@ -1,30 +1,35 @@
-use lazy_static::lazy_static;
 use regex::Regex;
+use std::sync::LazyLock;
 
 // TODO - rewrite
 
-lazy_static! {
-    // WARN]:
-    static ref BRACKET_COLON_REGEX: Regex = Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE)]:)").unwrap_or_else(|e| {
-        panic!("Failed to create 'BRACKET_COLON_REGEX': {}", e);
-    });
+// WARN]:
+static BRACKET_COLON_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE)]:)").unwrap_or_else(|err| {
+        panic!("Failed to create 'BRACKET_COLON_REGEX': {}", err);
+    })
+});
 
-    // WARN]
-    static ref BRACKET_REGEX: Regex = Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE)])").unwrap_or_else(|e| {
-        panic!("Failed to create 'BRACKET_REGEX': {}", e);
-    });
+// WARN]
+static BRACKET_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE)])").unwrap_or_else(|err| {
+        panic!("Failed to create 'BRACKET_REGEX': {}", err);
+    })
+});
 
+// WARN:
+static COLON_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE):)").unwrap_or_else(|err| {
+        panic!("Failed to create 'COLON_REGEX': {}", err);
+    })
+});
 
-    // WARN:
-    static ref COLON_REGEX: Regex = Regex::new("((INFO|WARN|WARNING|ERROR|FATAL|SEVERE):)").unwrap_or_else(|e| {
-        panic!("Failed to create 'COLON_REGEX': {}", e);
-    });
-
-    // WARN
-    static ref NOCOLON_NOBRACKET_REGEX: Regex = Regex::new("(INFO|WARN|WARNING|ERROR|FATAL|SEVERE)").unwrap_or_else(|e| {
-        panic!("Failed to create 'NOCOLON_NOBRACKET_REGEX': {}", e);
-    });
-}
+// WARN
+static NOCOLON_NOBRACKET_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("(INFO|WARN|WARNING|ERROR|FATAL|SEVERE)").unwrap_or_else(|err| {
+        panic!("Failed to create 'NOCOLON_NOBRACKET_REGEX': {}", err);
+    })
+});
 
 #[derive(Clone, Copy)]
 pub enum DelimiterType {
