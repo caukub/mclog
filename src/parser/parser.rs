@@ -105,7 +105,7 @@ impl Parser {
             true => {
                 let mut i_prefix = String::new();
                 let mut i_message = String::new();
-                //let level = self.log_level(&self.lines[last_line_idx]);
+
                 let message = &self.lines[last_line_idx];
 
                 let log_level = self.log_level(message);
@@ -169,28 +169,31 @@ impl Parser {
 
         let mut html_parts = Vec::new();
 
+        let mut id: usize = 1;
+
         for part in parts {
             let html_part = match part.log_level {
                 EntryLevel::Info => format!(
-                    "<span class=\"{}\">{}</span>{}\n",
+                    r#"<span class="p" id="L{id}"><span class={}>{}</span>{}</span>"#,
                     part.log_level,
                     html_escape::encode_text(part.prefix.as_str()),
                     html_escape::encode_text(part.message.as_str())
                 ),
                 EntryLevel::Warn | EntryLevel::Error | EntryLevel::Unknown => format!(
-                    "<span class=\"{}\">{}{}</span>\n",
+                    r#"<span class="p" id="L{id}"><span class="{}">{}{}</span></span>"#,
                     part.log_level,
                     html_escape::encode_text(part.prefix.as_str()),
                     html_escape::encode_text(part.message.as_str()),
                 ),
                 EntryLevel::Custom => format!(
-                    "<span class=\"{}\">{}</span>{}\n",
+                    r#"<span class="p" id="L{id}"><span class="{}">{}</span>{}</span>"#,
                     part.log_level,
                     html_escape::encode_text(part.prefix.as_str()),
                     html_escape::encode_text(part.message.as_str())
                 ),
             };
             html_parts.push(html_part);
+            id += 1;
         }
 
         html_parts
