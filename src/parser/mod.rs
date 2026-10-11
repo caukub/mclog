@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 #[derive(Debug, Clone, Copy)]
 pub enum LogLevel {
@@ -40,12 +40,36 @@ impl Deref for LogLine {
     }
 }
 
-/// Returns substring between log level keyword (e.g. `INFO`) and first whitespace after it.
+// TODO used AI for this to be able to move to other functions, rewrite this slop when finished
+fn level_suffix_in_line(line: &str) -> Option<&str> {
+    const LOG_LEVELS: &[&str] = &[
+        "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "WARNING", "SEVERE",
+    ];
+
+    let (pos, level) = LOG_LEVELS
+        .iter()
+        .filter_map(|level| line.find(level).map(|pos| (pos, *level)))
+        .min_by_key(|(pos, _)| *pos)?;
+
+    let rest = &line[pos + level.len()..];
+    let end = rest.find(char::is_whitespace).unwrap_or(rest.len());
+    let suffix = &rest[..end];
+
+    if suffix.is_empty() {
+        None
+    } else {
+        Some(suffix)
+    }
+}
+
+/// Returns substring between log level keyword (e.g. `INFO`) and first whitespace behind it.
 ///
 /// For example
 /// ```log
 /// [15:14:39] [INFO] [bootstrap] ... -> Some("]")
+///
 /// [15:14:39] [ServerMain/INFO]: [bootstrap] ... -> Some("]:")
+///
 /// [15:14:39] INFO [bootstrap] ... -> None
 /// ```
 ///
@@ -53,15 +77,28 @@ impl Deref for LogLine {
 /// This function will scan up to `line_limit` lines (all if `None`) and will return the suffix after finding it `match_limit` times/the most frequent one is returned if `match_limit` is not reached.
 ///
 /// # Purpose of the function
-/// After finding the log level suffix (meaning the log format) you can easily check for log levels without false positives (meaning messages containing log level keyword but not really being log level), used in e.g. [parse_entries]) or parse log lines into prefix (e.g. `[15:14:39] [ServerMain/INFO]:`) and the message (e.g. `[bootstrap] Running Java 21 (OpenJDK ...`) since `{LOG_LEVEL}{suffix}` is the delimiter.
+/// After finding the log level suffix (meaning the log format) you can easily check for log levels without false positives (meaning messages containing log level keyword but not really being log level), used in e.g. [parse_entries]) or parse log lines into prefix (e.g. `[15:14:39] [ServerMain/INFO]:`) and the message (e.g. `[bootstrap] Running Java 21 (OpenJDK ...`) since `{LOG_LEVEL}{suffix}` is the delimiters.
 pub fn find_log_level_suffix(
     lines: &[impl AsRef<str>],
     line_limit: Option<usize>,
     match_limit: Option<usize>,
 ) -> Option<String> {
-    for (idx, line) in lines.iter().enumerate() {}
+    let mut suffix_count: HashMap<Option<String>, usize> = HashMap::new();
 
-    None
+    for line in lines.iter().take(line_limit.unwrap_or(usize::MAX)) {
+        let sfx = level_suffix_in_line(line.as_ref()).map(str::to_owned);
+        let count = suffix_count.entry(sfx.clone()).or_insert(0);
+        *count += 1;
+
+        if *count >= match_limit.unwrap_or(usize::MAX) {
+            return sfx;
+        }
+    }
+
+    suffix_count
+        .into_iter()
+        .max_by_key(|(_, count)| *count)
+        .and_then(|(suffix, _)| suffix)
 }
 
 /// Parses log lines into log entries
@@ -95,13 +132,19 @@ pub fn find_log_level_suffix(
 /// 16 [15:14:39] [ServerMain/INFO]: [PluginInitializerManager] Paper plugins (1):
 /// 17 - Minepacks (2.4.27-T20240129235629)
 /// ```
-pub fn parse_entries(lines: &[impl AsRef<str>], delimiters: Delimiters) -> Vec<LogEntry> {
+pub fn parse_entries(
+    lines: &[impl AsRef<str>],
+    delimiters: Delimiters,
+    line_limit: Option<usize>,
+) -> Vec<LogEntry> {
     let mut entries = Vec::new();
 
     let mut latest_log_level = LogLevel::Unknown;
     let mut last_line_with_log_level: usize = 0;
 
-    for (idx, line) in lines.iter().enumerate() {
+    let line_limit = line_limit.unwrap_or(usize::MAX);
+
+    for (idx, line) in lines.iter().take(line_limit).enumerate() {
         let line = line.as_ref();
         let next_line = lines.get(idx + 1).map(|l| l.as_ref());
         let is_last_line = next_line.is_none();
@@ -156,7 +199,15 @@ pub fn parse_entries(lines: &[impl AsRef<str>], delimiters: Delimiters) -> Vec<L
     entries
 }
 
-/// Returns if log line has log level (e.g. `INFO`, `WARN`, `ERROR`, ...).
+/// Returns true if log line has log level (e.g. `INFO`, `WARN`, `ERROR`, ...).
+///
+/// ```log
+/// [15:14:39] [ServerMain/INFO]: [PluginInitializerManager] Initializing... -> true
+///
+/// java.lang.RuntimeException: java.lang.IllegalArgumentException: ... -> false
+///
+/// ATTENTION! ERROR OCCURED -> true if `Delimiters.error` is just `ERROR`, true otherwise.
+/// ```
 pub fn line_contains_log_level(line: impl Into<LogLine>, delimiters: &Delimiters) -> bool {
     let line = line.into();
 
