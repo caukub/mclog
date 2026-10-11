@@ -5,6 +5,8 @@ pub enum LogLevel {
     Info,
     Warn,
     Error,
+    Debug,
+    Trace,
     Custom,
     Unknown,
 }
@@ -39,24 +41,36 @@ impl Deref for LogLine {
 }
 
 /// Returns substring between log level keyword (e.g. `INFO`) and first whitespace after it.
-/// 
+///
 /// For example
-/// ```txt
+/// ```log
 /// [15:14:39] [INFO] [bootstrap] ... -> Some("]")
 /// [15:14:39] [ServerMain/INFO]: [bootstrap] ... -> Some("]:")
 /// [15:14:39] INFO [bootstrap] ... -> None
 /// ```
-pub fn find_log_level_suffix(lines: &[impl AsRef<str>], limit: Option<usize>, match_limit: Option<usize>) -> Option<String> {
+///
+/// # Arguments
+/// This function will scan up to `line_limit` lines (all if `None`) and will return the suffix after finding it `match_limit` times/the most frequent one is returned if `match_limit` is not reached.
+///
+/// # Purpose of the function
+/// After finding the log level suffix (meaning the log format) you can easily check for log levels without false positives (meaning messages containing log level keyword but not really being log level), used in e.g. [parse_entries]) or parse log lines into prefix (e.g. `[15:14:39] [ServerMain/INFO]:`) and the message (e.g. `[bootstrap] Running Java 21 (OpenJDK ...`) since `{LOG_LEVEL}{suffix}` is the delimiter.
+pub fn find_log_level_suffix(
+    lines: &[impl AsRef<str>],
+    line_limit: Option<usize>,
+    match_limit: Option<usize>,
+) -> Option<String> {
+    for (idx, line) in lines.iter().enumerate() {}
+
     None
 }
 
 /// Parses log lines into log entries
-/// 
+///
 /// A line containing a log level (e.g. `INFO`, `ERROR`, ...) always starts a new entry. Lines without log level belong to the entry above them.
 /// Lines at the very beggining of the input before any line with a log level form their own entry with [`LogLevel::Unknown`].
-/// 
+///
 /// That means e.g. error with a stacktrace is 1 entry.
-/// 
+///
 /// For example snippet below contains 3 entries with following log levels:
 /// 1) INFO (1st line)
 /// 2) ERROR (lines 2-15)
@@ -81,7 +95,7 @@ pub fn find_log_level_suffix(lines: &[impl AsRef<str>], limit: Option<usize>, ma
 /// 16 [15:14:39] [ServerMain/INFO]: [PluginInitializerManager] Paper plugins (1):
 /// 17 - Minepacks (2.4.27-T20240129235629)
 /// ```
-pub fn parse_entries(lines: &[impl AsRef<str>]) -> Vec<LogEntry> {
+pub fn parse_entries(lines: &[impl AsRef<str>], delimiters: Delimiters) -> Vec<LogEntry> {
     let mut entries = Vec::new();
 
     let mut latest_log_level = LogLevel::Unknown;
@@ -92,17 +106,21 @@ pub fn parse_entries(lines: &[impl AsRef<str>]) -> Vec<LogEntry> {
         let next_line = lines.get(idx + 1).map(|l| l.as_ref());
         let is_last_line = next_line.is_none();
 
-        if line.contains("INFO") {
+        if line.contains(&delimiters.info) {
             latest_log_level = LogLevel::Info;
-        } else if line.contains("WARN") || line.contains("WARNING") {
+        } else if line.contains(&delimiters.warn) || line.contains(&delimiters.warning) {
             latest_log_level = LogLevel::Warn;
-        } else if line.contains("ERROR") || line.contains("SEVERE") || line.contains("FATAL") {
+        } else if line.contains(&delimiters.error) || line.contains(&delimiters.severe) || line.contains(&delimiters.fatal) {
             latest_log_level = LogLevel::Error;
+        } else if line.contains(&delimiters.debug) {
+            latest_log_level = LogLevel::Debug;
+        } else if line.contains(&delimiters.trace) {
+            latest_log_level = LogLevel::Trace;
         }
 
-        let next_line_has_level = next_line.is_some_and(|nl| line_contains_log_level(nl));
+        let next_line_has_level = next_line.is_some_and(|nl| line_contains_log_level(nl, &delimiters));
 
-        if line_contains_log_level(line) {
+        if line_contains_log_level(line, &delimiters) {
             last_line_with_log_level = idx;
 
             if is_last_line || next_line_has_level {
@@ -134,15 +152,39 @@ pub fn parse_entries(lines: &[impl AsRef<str>]) -> Vec<LogEntry> {
     entries
 }
 
-pub fn line_contains_log_level(line: impl Into<LogLine>) -> bool {
+pub fn line_contains_log_level(line: impl Into<LogLine>, delimiters: &Delimiters) -> bool {
     let line = line.into();
 
-    // todo debug, trace, kontrolovat jen prvnich x znaku?
+    return line.contains(&delimiters.info)
+        || line.contains(&delimiters.warn)
+        || line.contains(&delimiters.error)
+        || line.contains(&delimiters.fatal)
+        || line.contains(&delimiters.severe)
+        || line.contains(&delimiters.warning)
+        || line.contains(&delimiters.debug)
+        || line.contains(&delimiters.trace);
+}
 
-    return line.contains("INFO")
-        || line.contains("WARN")
-        || line.contains("ERROR")
-        || line.contains("FATAL")
-        || line.contains("SEVERE")
-        || line.contains("WARNING");
+pub struct Delimiters {
+    info: String,
+    warn: String,
+    error: String,
+    fatal: String,
+    severe: String,
+    warning: String,
+    debug: String,
+    trace: String,
+}
+
+pub fn get_delimiters(suffix: &str) -> Delimiters {
+    Delimiters {
+        info: format!("INFO{}", suffix),
+        warn: format!("WARN{}", suffix),
+        error: format!("ERROR{}", suffix),
+        fatal: format!("FATAL{}", suffix),
+        severe: format!("SEVERE{}", suffix),
+        warning: format!("WARNING{}", suffix),
+        debug: format!("DEBUG{}", suffix),
+        trace: format!("TRACE{}", suffix),
+    }
 }
