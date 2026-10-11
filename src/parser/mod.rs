@@ -110,7 +110,10 @@ pub fn parse_entries(lines: &[impl AsRef<str>], delimiters: Delimiters) -> Vec<L
             latest_log_level = LogLevel::Info;
         } else if line.contains(&delimiters.warn) || line.contains(&delimiters.warning) {
             latest_log_level = LogLevel::Warn;
-        } else if line.contains(&delimiters.error) || line.contains(&delimiters.severe) || line.contains(&delimiters.fatal) {
+        } else if line.contains(&delimiters.error)
+            || line.contains(&delimiters.severe)
+            || line.contains(&delimiters.fatal)
+        {
             latest_log_level = LogLevel::Error;
         } else if line.contains(&delimiters.debug) {
             latest_log_level = LogLevel::Debug;
@@ -118,7 +121,8 @@ pub fn parse_entries(lines: &[impl AsRef<str>], delimiters: Delimiters) -> Vec<L
             latest_log_level = LogLevel::Trace;
         }
 
-        let next_line_has_level = next_line.is_some_and(|nl| line_contains_log_level(nl, &delimiters));
+        let next_line_has_level =
+            next_line.is_some_and(|nl| line_contains_log_level(nl, &delimiters));
 
         if line_contains_log_level(line, &delimiters) {
             last_line_with_log_level = idx;
@@ -152,6 +156,7 @@ pub fn parse_entries(lines: &[impl AsRef<str>], delimiters: Delimiters) -> Vec<L
     entries
 }
 
+/// Returns if log line has log level (e.g. `INFO`, `WARN`, `ERROR`, ...).
 pub fn line_contains_log_level(line: impl Into<LogLine>, delimiters: &Delimiters) -> bool {
     let line = line.into();
 
@@ -165,6 +170,12 @@ pub fn line_contains_log_level(line: impl Into<LogLine>, delimiters: &Delimiters
         || line.contains(&delimiters.trace);
 }
 
+/// Structure for holding delimiters (e.g. `INFO]:` for `Delimiters.info`) between log line prefix (e.g. `[15:14:39] [ServerMain/INFO]:`) and the message (e.g. `[bootstrap] Running Java 21 (OpenJDK ...`) for all log levels.
+///
+/// Get the delimiters using [get_delimiters] function.
+///
+/// Used in [line_contains_log_level] and [parse_entries].
+
 pub struct Delimiters {
     info: String,
     warn: String,
@@ -176,6 +187,25 @@ pub struct Delimiters {
     trace: String,
 }
 
+/// # Description
+/// Returns delimiters for all log levels, e.g. `INFO]:` for `Delimiters.info` when `]:` suffix is provided.
+///
+/// You can use [find_log_level_suffix] for finding log's suffix automatically.
+///
+/// ```rs
+/// pub fn get_delimiters(suffix: &str) -> Delimiters {
+///     Delimiters {
+///         info: format!("INFO{}", suffix),
+///         warn: format!("WARN{}", suffix),
+///         error: format!("ERROR{}", suffix),
+///         fatal: format!("FATAL{}", suffix),
+///         severe: format!("SEVERE{}", suffix),
+///         warning: format!("WARNING{}", suffix),
+///         debug: format!("DEBUG{}", suffix),
+///         trace: format!("TRACE{}", suffix),
+///     }
+/// }
+/// ```
 pub fn get_delimiters(suffix: &str) -> Delimiters {
     Delimiters {
         info: format!("INFO{}", suffix),
