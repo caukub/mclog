@@ -38,7 +38,15 @@ impl Deref for LogLine {
     }
 }
 
-pub fn find_log_level_suffix(limit: Option<usize>, match_limit: Option<usize>) -> Option<String> {
+/// Returns substring between log level keyword (e.g. `INFO`) and first whitespace after it.
+/// 
+/// For example
+/// ```txt
+/// [15:14:39] [INFO] [bootstrap] ... -> Some("]")
+/// [15:14:39] [ServerMain/INFO]: [bootstrap] ... -> Some("]:")
+/// [15:14:39] INFO [bootstrap] ... -> None
+/// ```
+pub fn find_log_level_suffix(lines: &[impl AsRef<str>], limit: Option<usize>, match_limit: Option<usize>) -> Option<String> {
     None
 }
 
@@ -54,7 +62,7 @@ pub fn find_log_level_suffix(limit: Option<usize>, match_limit: Option<usize>) -
 /// 2) ERROR (lines 2-15)
 /// 3) INFO (lines 16-17)
 ///
-/// ```
+/// ```log
 /// 1 [15:14:39] [ServerMain/INFO]: [PluginInitializerManager] Initializing plugins...
 /// 2 [15:14:39] [ServerMain/ERROR]: [DirectoryProviderSource] Error loading plugin: java.lang.IllegalArgumentException: Directory 'plugins/.paper-remapped/citizensapi-2.0.33-SNAPSHOT-sources.zjar' does not contain a paper-plugin.yml or plugin.yml! Could not determine plugin type, cannot load a plugin from it!
 /// 3 java.lang.RuntimeException: java.lang.IllegalArgumentException: Directory 'plugins/.paper-remapped/citizensapi-2.0.33-SNAPSHOT-sources.jar' does not contain a paper-plugin.yml or plugin.yml! Could not determine plugin type, cannot load a plugin from it!
