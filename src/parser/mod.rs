@@ -58,8 +58,14 @@ pub struct Parser<'a, S: AsRef<str>> {
 }
 
 impl<'a, S: AsRef<str>> Parser<'a, S> {
-    pub fn new(lines: &'a [S], line_limit: Option<usize>, analyzer_line_limit: Option<usize>, delimiter_match_limit: Option<usize>) -> Self {
-        let log_level_suffix = find_log_level_suffix(lines, analyzer_line_limit, delimiter_match_limit);
+    pub fn new(
+        lines: &'a [S],
+        line_limit: Option<usize>,
+        analyzer_line_limit: Option<usize>,
+        delimiter_match_limit: Option<usize>,
+    ) -> Self {
+        let log_level_suffix =
+            find_log_level_suffix(lines, analyzer_line_limit, delimiter_match_limit);
         let delimiters = get_delimiters(log_level_suffix);
 
         Self {
@@ -78,24 +84,82 @@ impl<'a, S: AsRef<str>> Parser<'a, S> {
 
         for line in self.lines {
             let line = line.as_ref();
+            let mut contains_delimiter = false;
 
             if line.contains(&self.delimiters.info) {
                 last_log_level = LogLevel::Info;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.warn) {
                 last_log_level = LogLevel::Warn;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.error) {
                 last_log_level = LogLevel::Error;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.fatal) {
                 last_log_level = LogLevel::Fatal;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.severe) {
                 last_log_level = LogLevel::Severe;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.debug) {
                 last_log_level = LogLevel::Debug;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.trace) {
                 last_log_level = LogLevel::Trace;
+                contains_delimiter = true;
             } else if line.contains(&self.delimiters.warning) {
                 last_log_level = LogLevel::Warning;
+                contains_delimiter = true;
             }
+
+            let delimiter: Option<&str> = match last_log_level {
+                LogLevel::Info => Some(&self.delimiters.info),
+                LogLevel::Warn => Some(&self.delimiters.warn),
+                LogLevel::Error => Some(&self.delimiters.error),
+                LogLevel::Fatal => Some(&self.delimiters.fatal),
+                LogLevel::Severe => Some(&self.delimiters.severe),
+                LogLevel::Debug => Some(&self.delimiters.debug),
+                LogLevel::Trace => Some(&self.delimiters.trace),
+                LogLevel::Warning => Some(&self.delimiters.warning),
+                LogLevel::Custom | LogLevel::Unknown => None,
+            };
+
+            let entry = if contains_delimiter {
+                match delimiter {
+                    Some(deli) => {
+                        let splitted = line.split_once(deli).unwrap();
+                        let (prefix, message) = splitted;
+                        let prefix = format!("{}{}", prefix, deli);
+
+                        let entry = StructuredLogEntry {
+                            level: last_log_level,
+                            prefix: Some(prefix),
+                            message: message.to_string(),
+                        };
+
+                        entry
+                    }
+                    None => {
+                        let entry = StructuredLogEntry {
+                            level: last_log_level,
+                            prefix: None,
+                            message: line.to_string(),
+                        };
+
+                        entry
+                    }
+                }
+            } else {
+                let entry = StructuredLogEntry {
+                    level: last_log_level,
+                    prefix: None,
+                    message: line.to_string(),
+                };
+
+                entry
+            };
+
+            structured_lines.push(entry);
         }
 
         structured_lines
@@ -246,33 +310,56 @@ impl<'a, S: AsRef<str>> Parser<'a, S> {
     }
 
     pub fn html(&self) -> Vec<String> {
-        let mut lines = Vec::new();
+        let structured_lines = self.structure_lines();
 
-        let mut last_log_level = LogLevel::Unknown;
+        let mut html = Vec::new();
 
-        for line in self.lines {
-            let line = line.as_ref();
+        let mut id: usize = 1;
 
-            if line.contains(&self.delimiters.info) {
-                last_log_level = LogLevel::Info;
-            } else if line.contains(&self.delimiters.warn) {
-                last_log_level = LogLevel::Warn;
-            } else if line.contains(&self.delimiters.warning) {
-                last_log_level = LogLevel::Warning;
-            } else if line.contains(&self.delimiters.error) {
-                last_log_level = LogLevel::Error;
-            } else if line.contains(&self.delimiters.severe) {
-                last_log_level = LogLevel::Severe;
-            } else if line.contains(&self.delimiters.fatal) {
-                last_log_level = LogLevel::Fatal;
-            } else if line.contains(&self.delimiters.debug) {
-                last_log_level = LogLevel::Debug;
-            } else if line.contains(&self.delimiters.trace) {
-                last_log_level = LogLevel::Trace;
+        for line in structured_lines {
+            if line.prefix.as_deref().is_none_or(|p| p.is_empty()) && line.message.is_empty() {
+                continue;
             }
+
+            let log_level = match line.level {
+                LogLevel::Info | LogLevel::Debug => "i",
+                LogLevel::Error | LogLevel::Fatal | LogLevel::Severe => "e",
+                LogLevel::Warn | LogLevel::Warning => "w",
+                LogLevel::Custom => "c",
+                LogLevel::Trace => "t",
+                LogLevel::Unknown => "u",
+            };
+
+            let html_part = match line.level {
+                LogLevel::Info | LogLevel::Debug | LogLevel::Trace => format!(
+                    r#"<span class="p" id="L{}"><span class={}>{}</span>{}</span>"#,
+                    id,
+                    log_level,
+                    html_escape::encode_text(&line.prefix.unwrap_or_default()),
+                    html_escape::encode_text(&line.message),
+                ),
+                LogLevel::Warn
+                | LogLevel::Error
+                | LogLevel::Warning
+                | LogLevel::Fatal
+                | LogLevel::Severe
+                | LogLevel::Custom
+                | LogLevel::Unknown => {
+                    format!(
+                        r#"<span class="p" id="L{}"><span class="{}">{}{}</span></span>"#,
+                        id,
+                        log_level,
+                        html_escape::encode_text(&line.prefix.unwrap_or_default()),
+                        html_escape::encode_text(&line.message),
+                    )
+                }
+            };
+
+            html.push(html_part);
+            id += 1;
         }
 
-        lines
+        html
     }
 
     pub fn html_entries(&self) -> Vec<String> {
