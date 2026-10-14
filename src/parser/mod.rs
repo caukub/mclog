@@ -317,10 +317,6 @@ impl<'a, S: AsRef<str>> Parser<'a, S> {
         let mut id: usize = 1;
 
         for line in structured_lines {
-            if line.prefix.as_deref().is_none_or(|p| p.is_empty()) && line.message.is_empty() {
-                continue;
-            }
-
             let log_level = match line.level {
                 LogLevel::Info | LogLevel::Debug => "i",
                 LogLevel::Error | LogLevel::Fatal | LogLevel::Severe => "e",
@@ -371,10 +367,6 @@ impl<'a, S: AsRef<str>> Parser<'a, S> {
         let mut id: usize = 1;
 
         for entry in entries {
-            if entry.prefix.as_deref().is_none_or(|p| p.is_empty()) && entry.message.is_empty() {
-                continue;
-            }
-
             let log_level = match entry.level {
                 LogLevel::Info | LogLevel::Debug => "i",
                 LogLevel::Error | LogLevel::Fatal | LogLevel::Severe => "e",
