@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy)]
 pub enum LogLevel {
@@ -309,7 +309,7 @@ impl<'a, S: AsRef<str>> Parser<'a, S> {
         entries
     }
 
-    pub fn html(&self) -> Vec<String> {
+    pub fn html_lines(&self) -> Vec<String> {
         let structured_lines = self.structure_lines();
 
         let mut html = Vec::new();
