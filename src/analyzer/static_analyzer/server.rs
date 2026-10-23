@@ -46,9 +46,11 @@ pub struct ServerData {
 
 impl StaticServerAnalyzer for StaticAnalyzer {
     fn data(&self) -> ServerData {
-        for line in self.lines.iter().take(100) {
-
+        for line in self.lines.iter().take(100) {}
+        ServerData {
+            platform: Platform::Vanilla,
+            platform_version: None,
+            minecraft_version: None,
         }
-        ServerData { platform: Platform::Vanilla, platform_version: None, minecraft_version: None }
     }
 }
