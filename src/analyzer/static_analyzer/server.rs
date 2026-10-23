@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use regex::Regex;
+
 use super::StaticAnalyzer;
 
 pub enum Platform {
@@ -28,16 +32,23 @@ pub enum ProxyPlatform {
 }
 
 pub trait StaticServerAnalyzer {
-    fn platform() -> Option<Platform>;
-    fn version() -> Option<String>;
+    fn data(&self) -> ServerData;
+}
+
+static BUKKIT_BASED_PLATFORM_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"This server is running\s+(.*?)\s+version\s+(\S+)").unwrap());
+
+pub struct ServerData {
+    platform: Platform,
+    platform_version: Option<String>,
+    minecraft_version: Option<String>,
 }
 
 impl StaticServerAnalyzer for StaticAnalyzer {
-    fn platform() -> Option<Platform> {
-        todo!()
-    }
+    fn data(&self) -> ServerData {
+        for line in self.lines.iter().take(100) {
 
-    fn version() -> Option<String> {
-        todo!()
+        }
+        ServerData { platform: Platform::Vanilla, platform_version: None, minecraft_version: None }
     }
 }

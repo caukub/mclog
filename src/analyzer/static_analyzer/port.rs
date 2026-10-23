@@ -48,5 +48,4 @@ impl StaticPortAnalyzer for StaticAnalyzer {
     }
 }
 
-
 // TODO plugin/mod ports
