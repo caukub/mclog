@@ -5,7 +5,7 @@ use regex::Regex;
 use super::StaticAnalyzer;
 
 pub trait StaticPluginAnalyzer {
-    fn plugins(&self) -> Vec<Plugin<'_>>;
+    fn plugins(&self, line_limit: Option<usize>) -> Vec<Plugin<'_>>;
 }
 
 static PLUGIN_LOAD_RE: LazyLock<Regex> = LazyLock::new(|| {
@@ -26,10 +26,12 @@ pub struct Plugin<'a> {
 }
 
 impl StaticPluginAnalyzer for StaticAnalyzer {
-    fn plugins(&self) -> Vec<Plugin<'_>> {
+    fn plugins(&self, line_limit: Option<usize>) -> Vec<Plugin<'_>> {
+        let line_limit = line_limit.unwrap_or(usize::MAX);
+
         let mut plugins = Vec::new();
 
-        for line in self.lines.iter().take(self.line_limit) {
+        for line in self.lines.iter().take(line_limit) {
             if let Some(caps) = PLUGIN_LOAD_RE.captures(line) {
                 let (Some(plugin), Some(name)) = (caps.name("plugin"), caps.name("name")) else {
                     continue;
