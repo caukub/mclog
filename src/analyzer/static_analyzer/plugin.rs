@@ -4,14 +4,6 @@ use regex::Regex;
 
 use super::StaticAnalyzer;
 
-#[derive(Debug)]
-pub struct Plugin<'a> {
-    pub plugin: &'a str,
-    pub name: &'a str,
-    pub version: Option<&'a str>,
-    pub enabled: bool,
-}
-
 pub trait StaticPluginAnalyzer {
     fn plugins(&self) -> Vec<Plugin<'_>>;
 }
@@ -24,6 +16,14 @@ static PLUGIN_LOAD_RE: LazyLock<Regex> = LazyLock::new(|| {
 static PLUGIN_ENABLE_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\[(?P<plugin>[^\]]+)\] Enabling (?P<name>\S+) v(?P<version>\S+)").unwrap()
 });
+
+#[derive(Debug)]
+pub struct Plugin<'a> {
+    pub plugin: &'a str,
+    pub name: &'a str,
+    pub version: Option<&'a str>,
+    pub enabled: bool,
+}
 
 impl StaticPluginAnalyzer for StaticAnalyzer {
     fn plugins(&self) -> Vec<Plugin<'_>> {
@@ -55,3 +55,5 @@ impl StaticPluginAnalyzer for StaticAnalyzer {
         plugins
     }
 }
+
+// TODO jary co se nezaply

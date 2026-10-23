@@ -26,3 +26,4 @@ impl LogAnalyzer for DynamicAnalyzer {
 }
 
 // TODO callback!!!!!
+// TODO stacktraces
