@@ -12,6 +12,17 @@ pub enum Platform {
     Proxy(ProxyPlatform),
 }
 
+impl std::fmt::Display for Platform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Platform::Vanilla => write!(f, "Vanilla"),
+            Platform::Plugin(p) => write!(f, "{p}"),
+            Platform::Modloader(m) => write!(f, "{m}"),
+            Platform::Proxy(p) => write!(f, "{p}"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum PluginPlatform {
     CraftBukkit,
@@ -22,6 +33,20 @@ pub enum PluginPlatform {
     Folia,
 }
 
+impl std::fmt::Display for PluginPlatform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            PluginPlatform::CraftBukkit => "CraftBukkit",
+            PluginPlatform::Spigot => "Spigot",
+            PluginPlatform::Paper => "Paper",
+            PluginPlatform::Purpur => "Purpur",
+            PluginPlatform::Pufferfish => "Pufferfish",
+            PluginPlatform::Folia => "Folia",
+        };
+        f.write_str(name)
+    }
+}
+
 #[derive(Debug)]
 pub enum ModloaderPlatform {
     Forge,
@@ -29,11 +54,33 @@ pub enum ModloaderPlatform {
     NeoForge,
 }
 
+impl std::fmt::Display for ModloaderPlatform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            ModloaderPlatform::Forge => "Forge",
+            ModloaderPlatform::Fabric => "Fabric",
+            ModloaderPlatform::NeoForge => "NeoForge",
+        };
+        f.write_str(name)
+    }
+}
+
 #[derive(Debug)]
 pub enum ProxyPlatform {
     BungeeCord,
     Waterfall,
     Velocity,
+}
+
+impl std::fmt::Display for ProxyPlatform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            ProxyPlatform::BungeeCord => "BungeeCord",
+            ProxyPlatform::Waterfall => "Waterfall",
+            ProxyPlatform::Velocity => "Velocity",
+        };
+        f.write_str(name)
+    }
 }
 
 pub trait StaticServerAnalyzer {
@@ -47,7 +94,7 @@ static BUKKIT_PLATFORM_VERSION_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"This server is running (\S+) version (\S+)").unwrap());
 
 static NEO_FORGE_PLATFORM_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?:Neo)?Forge mod loading, version (\S+)").unwrap());
+    LazyLock::new(|| Regex::new(r"(?:Neo)?Forge mod loading, version ([^\s,]+)").unwrap());
 
 static FORGE_OLD_PLATFORM_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"Forge Mod Loader version (\S+)").unwrap());
@@ -56,7 +103,7 @@ static FABRIC_PLATFORM_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"Loading Minecraft \S+ with Fabric Loader (\S+)").unwrap());
 
 static BUNGEECORD_WATERFALL_PLATFORM_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"Enabled (\S+) version (\S+)").unwrap());
+    LazyLock::new(|| Regex::new(r"Enabled \S+ version (\S+)").unwrap());
 
 static VELOCITY_PLATFORM_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"Booting up Velocity (\S+)").unwrap());
@@ -66,9 +113,9 @@ static FOLIA_PLATFORM_RE: LazyLock<Regex> =
 
 #[derive(Debug)]
 pub struct ServerInfo {
-    minecraft_version: Option<String>,
-    platform: Platform,
-    platform_version: Option<String>,
+    pub minecraft_version: Option<String>,
+    pub platform: Platform,
+    pub platform_version: Option<String>,
 }
 
 impl StaticServerAnalyzer for StaticAnalyzer {
@@ -85,6 +132,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
                 let version = caps.get(1).map(|p| p.as_str().to_string());
 
                 minecraft_version = version;
+
+                if platform_version.is_some() {
+                    break;
+                }
             }
 
             // Plugin platform
@@ -115,7 +166,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                     platform = plat;
                     platform_version = Some(plat_version.to_string());
-                    break;
+
+                    if minecraft_version.is_some() {
+                        break;
+                    }
                 }
             }
 
@@ -131,7 +185,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                 platform = plat;
                 platform_version = version;
-                break;
+
+                if minecraft_version.is_some() {
+                    break;
+                }
             }
 
             // Fabric
@@ -140,7 +197,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                 platform = Platform::Modloader(ModloaderPlatform::Fabric);
                 platform_version = version;
-                break;
+
+                if minecraft_version.is_some() {
+                    break;
+                }
             }
 
             // Velocity
@@ -149,7 +209,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                 platform = Platform::Proxy(ProxyPlatform::Velocity);
                 platform_version = version;
-                break;
+
+                if minecraft_version.is_some() {
+                    break;
+                }
             }
 
             // Forge old
@@ -158,7 +221,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                 platform = Platform::Modloader(ModloaderPlatform::Forge);
                 platform_version = version;
-                break;
+
+                if minecraft_version.is_some() {
+                    break;
+                }
             }
 
             // BungeeCord
@@ -173,7 +239,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                 platform = plat;
                 platform_version = version;
-                break;
+
+                if minecraft_version.is_some() {
+                    break;
+                }
             }
 
             // Folia
@@ -182,7 +251,10 @@ impl StaticServerAnalyzer for StaticAnalyzer {
 
                 platform = Platform::Plugin(PluginPlatform::Folia);
                 platform_version = version;
-                break;
+
+                if minecraft_version.is_some() {
+                    break;
+                }
             }
         }
 
