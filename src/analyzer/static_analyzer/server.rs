@@ -4,12 +4,18 @@ use regex::Regex;
 
 use super::StaticAnalyzer;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Platform {
     Vanilla,
     Plugin(PluginPlatform),
     Modloader(ModloaderPlatform),
     Proxy(ProxyPlatform),
+}
+
+impl Platform {
+    pub fn is_proxy(&self) -> bool {
+        matches!(self, Platform::Proxy(_))
+    }
 }
 
 impl std::fmt::Display for Platform {
@@ -23,7 +29,7 @@ impl std::fmt::Display for Platform {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum PluginPlatform {
     CraftBukkit,
     Spigot,
@@ -47,7 +53,7 @@ impl std::fmt::Display for PluginPlatform {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ModloaderPlatform {
     Forge,
     Fabric,
@@ -65,7 +71,7 @@ impl std::fmt::Display for ModloaderPlatform {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ProxyPlatform {
     BungeeCord,
     Waterfall,
