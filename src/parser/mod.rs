@@ -475,7 +475,7 @@ fn get_delimiters(suffix: Option<String>) -> Delimiters {
 
 // TODO used AI for this to be able to move to other functions, rewrite this slop when finished
 pub const LOG_LEVELS: &[&str] = &[
-    "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "WARNING", "SEVERE",
+    "INFO", "DEBUG", "WARN", "ERROR", "FATAL", "WARNING", "SEVERE", "TRACE"
 ];
 
 fn level_suffix_in_line(line: &str) -> Option<&str> {
