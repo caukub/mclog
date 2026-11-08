@@ -4,8 +4,8 @@ use regex::Regex;
 
 use super::StaticAnalyzer;
 
-pub trait StaticPluginAnalyzer {
-    fn plugins(&self, line_limit: Option<usize>) -> Vec<Plugin<'_>>;
+pub trait StaticPluginAnalyzer<'a> {
+    fn plugins(&self, line_limit: Option<usize>) -> Vec<Plugin<'a>>;
 }
 
 static PLUGIN_LOAD_RE: LazyLock<Regex> = LazyLock::new(|| {
@@ -25,13 +25,13 @@ pub struct Plugin<'a> {
     pub enabled: bool,
 }
 
-impl StaticPluginAnalyzer for StaticAnalyzer {
-    fn plugins(&self, line_limit: Option<usize>) -> Vec<Plugin<'_>> {
+impl<'a> StaticPluginAnalyzer<'a> for StaticAnalyzer<'a> {
+    fn plugins(&self, line_limit: Option<usize>) -> Vec<Plugin<'a>> {
         let line_limit = line_limit.unwrap_or(usize::MAX);
 
         let mut plugins = Vec::new();
 
-        for line in self.lines.iter().take(line_limit) {
+        for line in self.lines.iter().copied().take(line_limit) {
             if let Some(caps) = PLUGIN_LOAD_RE.captures(line) {
                 let (Some(plugin), Some(name)) = (caps.name("plugin"), caps.name("name")) else {
                     continue;

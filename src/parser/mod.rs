@@ -474,7 +474,7 @@ fn get_delimiters(suffix: Option<String>) -> Delimiters {
 }
 
 // TODO used AI for this to be able to move to other functions, rewrite this slop when finished
-const LOG_LEVELS: &[&str] = &[
+pub const LOG_LEVELS: &[&str] = &[
     "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "WARNING", "SEVERE",
 ];
 
@@ -517,10 +517,6 @@ pub fn find_log_level_suffix(
     delimiter_match_limit: Option<usize>,
 ) -> Option<String> {
     let mut suffix_count: HashMap<Option<String>, usize> = HashMap::new();
-
-    const LOG_LEVELS: &[&str] = &[
-        "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "WARNING", "SEVERE",
-    ];
 
     for line in lines.iter().take(line_limit.unwrap_or(usize::MAX)) {
         let line_str = line.as_ref();

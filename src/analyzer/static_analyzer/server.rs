@@ -124,7 +124,7 @@ pub struct ServerInfo {
     pub platform_version: Option<String>,
 }
 
-impl StaticServerAnalyzer for StaticAnalyzer {
+impl StaticServerAnalyzer for StaticAnalyzer<'_> {
     fn version_platform(&self, line_limit: Option<usize>) -> ServerInfo {
         let line_limit = line_limit.unwrap_or(usize::MAX);
 

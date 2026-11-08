@@ -19,7 +19,7 @@ pub trait StaticPortAnalyzer {
     fn rcon(&self, line_limit: Option<usize>) -> Option<u16>;
 }
 
-impl StaticPortAnalyzer for StaticAnalyzer {
+impl StaticPortAnalyzer for StaticAnalyzer<'_> {
     fn server(&self, line_limit: Option<usize>) -> Option<u16> {
         let line_limit = line_limit.unwrap_or(usize::MAX);
 
