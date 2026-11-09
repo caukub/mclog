@@ -2,6 +2,12 @@
 name = "mclog"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "Minecraft log parser and analyzer"
+repository = "https://github.com/caukub/mclog"
+readme = "README.md"
+keywords = ["parser", "analyzer", "minecraft", "logs"]
+categories = ["parsing"]
 
 [dependencies]
 boa_engine = "0.22.0"
